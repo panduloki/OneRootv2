@@ -543,7 +543,7 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
                                 apply() //asynchronously
                             }
                             // storing session data to folder
-                            storeDetectionsToFolder()
+                            storeSessionDataToFolder()
 
                             // update profile
                             updateProfileJson()
@@ -1112,7 +1112,7 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
     }
 
     // saving detection to folder
-    private fun storeDetectionsToFolder()
+    private fun storeSessionDataToFolder()
     {
         val filepath = "OneRootFiles"
         val fileName  = "session.json"
