@@ -313,14 +313,14 @@ class HomeFragment : Fragment() {
         fragmentTransaction?.commit()
     }
 
-    private fun restartActivity() {
-        super.onDestroy()
-        val i = Intent(activity, MainActivity::class.java)
-        activity?.finish()
-        activity?.overridePendingTransition(0, 0)
-        startActivity(i)
+//    private fun restartActivity() {
+//        super.onDestroy()
+//        val i = Intent(activity, MainActivity::class.java)
+//        activity?.finish()
 //        activity?.overridePendingTransition(0, 0)
-    }
+//        startActivity(i)
+////        activity?.overridePendingTransition(0, 0)
+//    }
 
     // creating database
     private val db = Firebase.firestore
