@@ -278,7 +278,7 @@ class RegisterFragment : Fragment() {
             )
 
             // Add a new document with a generated ID
-            val documentName = rgUsername+ "Data"
+            val documentName = rgUsername.replace(" ","").replace(".","")+ "Data"
             db.collection("users").document(documentName)
                 .set(user)
                 .addOnSuccessListener {

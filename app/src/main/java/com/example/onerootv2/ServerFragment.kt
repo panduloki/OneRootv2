@@ -40,7 +40,7 @@ class ServerFragment : Fragment() {
 
         // sending all images through server
         sendButton?.setOnClickListener {
-            storeProfileData()
+            storeProfileDataInStorage()
             textView.text = "image sent"
             Toast.makeText(activity,"photo sent", Toast.LENGTH_LONG).show()
         }
@@ -48,7 +48,7 @@ class ServerFragment : Fragment() {
         // saving profile data in internal storage
         syncProfButton.setOnClickListener {
             try {
-                storeProfileData()
+                storeProfileDataInStorage()
                 textView.text = "profile data saved"
             }
             catch (e: IOException)
@@ -67,7 +67,7 @@ class ServerFragment : Fragment() {
         }
     }
 
-    private fun storeProfileData() {
+    private fun storeProfileDataInStorage() {
         fun storeJsonData(context: Context, fileName: String, jsonData: String)
         {
             // https://www.youtube.com/watch?v=JUlZYddw03o

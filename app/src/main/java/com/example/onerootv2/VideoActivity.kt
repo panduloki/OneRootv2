@@ -1486,7 +1486,9 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
             println("sessionData $sessionData")
 
             // Add a new document with a generated ID
-            val documentName1 = sessionUser+"SessionData"
+            // clear document name with spaces and dot
+
+            val documentName1 = sessionUser.replace(" ","").replace(".", "")+"SessionData"
             db.collection("session").document(documentName1).set(sessionData)
                 .addOnSuccessListener {
                     Toast.makeText(this, "firebase session updated", Toast.LENGTH_SHORT).show()
