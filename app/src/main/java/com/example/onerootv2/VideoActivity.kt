@@ -546,7 +546,7 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
                             storeSessionDataToFolder()
 
                             // update profile
-                            updateProfileJson()
+                            updateProfileJsonToStorage()
 
                             // saving file to database
                             storeSessionDataToFirebase()
@@ -1609,7 +1609,7 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
         }
     }
 
-    private fun updateProfileJson()
+    private fun updateProfileJsonToStorage()
     {
 
         val filepath = "OneRootFiles"
