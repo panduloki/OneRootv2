@@ -14,9 +14,10 @@
         android:layout_height="match_parent"
         android:contentDescription="@string/background"
         android:scaleType="centerCrop"
-        android:src="@drawable/background1"
+        android:src="@drawable/b3"
         tools:layout_editor_absoluteX="16dp"
-        tools:layout_editor_absoluteY="0dp" />
+        tools:layout_editor_absoluteY="0dp"
+        android:minHeight="48dp"/>
 
     <Button
         android:id="@+id/sessionButton"
@@ -34,7 +35,8 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.499"
         tools:ignore="RelativeOverlap,RtlHardcoded"
-        tools:visibility="visible" />
+        tools:visibility="visible"
+        android:minHeight="48dp"/>
 
     <Button
         android:id="@+id/LoadButton"
@@ -53,7 +55,8 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.695"
         tools:ignore="RelativeOverlap,RtlHardcoded"
-        tools:visibility="visible" />
+        tools:visibility="visible"
+        android:minHeight="48dp"/>
 
     <Button
         android:id="@+id/unLoadButton"
@@ -72,6 +75,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.695"
         tools:ignore="RelativeOverlap,RtlHardcoded"
-        tools:visibility="visible" />
+        tools:visibility="visible"
+        android:minHeight="48dp"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
