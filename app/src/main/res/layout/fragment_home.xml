@@ -19,7 +19,7 @@
         tools:layout_editor_absoluteY="0dp"
         android:minHeight="48dp"/>
 
-    <Button
+    <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/sessionButton"
         android:layout_width="160dp"
         android:layout_height="wrap_content"
@@ -38,16 +38,19 @@
         tools:visibility="visible"
         android:minHeight="48dp"/>
 
-    <Button
+    <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/LoadButton"
-        android:layout_width="160dp"
-        android:layout_height="wrap_content"
+        android:layout_width="165dp"
+        android:layout_height="68dp"
         android:layout_gravity="bottom|left"
         android:background="@drawable/round_button"
+        android:paddingLeft="16dp"
         android:drawableLeft="@drawable/truck_loading"
+        android:minHeight="48dp"
         android:text="@string/loadButtonText"
         android:textAllCaps="false"
         android:textColor="#000000"
+        android:paddingRight="10dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.163"
@@ -55,19 +58,20 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.695"
         tools:ignore="RelativeOverlap,RtlHardcoded"
-        tools:visibility="visible"
-        android:minHeight="48dp"/>
+        tools:visibility="visible" />
 
-    <Button
+    <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/unLoadButton"
         android:layout_width="160dp"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|left"
         android:background="@drawable/round_button"
+        android:paddingLeft="16dp"
         android:drawableLeft="@drawable/truck_unload"
         android:text="@string/unloading_truck_text"
         android:textAllCaps="false"
         android:textColor="#000000"
+        android:paddingRight="10dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.848"
