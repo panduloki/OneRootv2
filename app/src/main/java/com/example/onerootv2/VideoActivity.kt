@@ -1728,10 +1728,6 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
             println("updating status to firebase failed please connect to internet")
         }
     }
-
-
-
-
 }
 
 
