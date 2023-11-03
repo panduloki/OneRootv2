@@ -178,7 +178,6 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         fragmentTransaction.replace(R.id.frame_layout,fragment)
         fragmentTransaction.commit()
     }
-
 }
 
 

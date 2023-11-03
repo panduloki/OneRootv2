@@ -274,7 +274,8 @@ class RegisterFragment : Fragment() {
                 "numberOfCoconuts" to 1,
                 "numberOfSessions" to 1,
                 "location" to selectedLocation,
-                "role" to selectedRole
+                "role" to selectedRole,
+                "status" to "user registered"
             )
 
             // Add a new document with a generated ID

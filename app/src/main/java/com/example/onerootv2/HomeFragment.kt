@@ -17,6 +17,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import com.example.onerootv2.MainActivity.Companion.TAG
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.gson.Gson
@@ -58,6 +59,9 @@ class HomeFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        readProfileFromStorage()
+
         val sharedPref = this.activity?.getSharedPreferences("myPref", Context.MODE_PRIVATE)
         val editor = sharedPref?.edit()
         val sessionStatus = sharedPref?.getInt("session",5)
@@ -67,6 +71,7 @@ class HomeFragment : Fragment() {
         val sessionStoredInDb = sharedPref?.getBoolean("sessionDb",true)
         if (profileStoredInDb != true)
         {
+
             println("profile data not uploaded to firebase trying to upload again")
             // reading profile data from storage
             readProfileFromStorage()
@@ -135,6 +140,8 @@ class HomeFragment : Fragment() {
             {
                 println("error in Home Fragment/profile data:loading profile data from external storage failed")
             }
+
+            updateStatusToFirebase("profile data not uploaded by $userName trying to upload again")
 
         }
         else
@@ -253,9 +260,11 @@ class HomeFragment : Fragment() {
                 unLoadButtonEvent.visibility = View.VISIBLE
 
                 println("user was choosing: ")
+                updateStatusToFirebase("user completed last session user was choosing loading or unloading")
                 loadButtonEvent.setOnClickListener {
                     try {
                         println("user chosen loading")
+                        updateStatusToFirebase("user clicked loading, session was going on")
                         // loading play
                         editor?.apply {
                             putInt("session", 1)
@@ -273,6 +282,7 @@ class HomeFragment : Fragment() {
                     try {
                         // unloading play
                         println("user chosen unloading")
+                        updateStatusToFirebase("user clicked unloading, session was going on")
                         editor?.apply {
                             putInt("session", 2)
                             apply() //asynchronously
@@ -287,9 +297,11 @@ class HomeFragment : Fragment() {
         }
     }
 
-//    override fun onDestroyView() {
-//        super.onDestroyView()
-//    }
+
+    override fun onDestroyView() {
+        updateStatusToFirebase("user was offline")
+        super.onDestroyView()
+    }
 
 //    private fun returnFragmentBack() {
 //        activity?.supportFragmentManager?.popBackStack()
@@ -345,7 +357,7 @@ class HomeFragment : Fragment() {
             )
 
             // Add a new document with a generated ID
-            val documentName = userName+ "Data"
+            val documentName = userName.replace(" ","").replace(".","")+ "Data"
             db.collection("users").document(documentName)
                 .set(user)
                 .addOnSuccessListener {
@@ -603,5 +615,25 @@ class HomeFragment : Fragment() {
 
     }
 
+    private fun updateStatusToFirebase(text: String) {
+        // https://saveyourtime.medium.com/firebase-cloud-firestore-add-set-update-delete-get-data-6da566513b1b
+
+        if (activity?.let { it1 -> checkForInternet(it1) } == true)
+        {
+            println("updating status to firebase: $text")
+            // firestore update
+            // https://firebase.google.com/docs/firestore/manage-data/add-data
+
+            val documentName = userName.replace(" ", "").replace(".", "") + "Data"
+
+            db.collection("users").document(documentName).update("status", text)
+                .addOnSuccessListener { Log.d(TAG, "StatusToFirebase successfully updated!") }
+                .addOnFailureListener { e -> Log.w(TAG, "Error updateStatusToFirebase ", e) }
+        }
+        else
+        {
+            println("updating status to firebase failed please connect to internet")
+        }
+    }
 
 }

@@ -9,6 +9,8 @@ import android.graphics.*
 import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraManager
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
@@ -207,6 +209,9 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
                 println("----------------------------------------")
             }
         }
+
+        // updating status to firebase
+        updateStatusToFirebase("session_status: $sessionStatus")
 
         //  buttons initialisation after layout
         captureButton = findViewById(R.id.captureButton)
@@ -1669,6 +1674,63 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
         }
 
     }
+
+    private fun checkForInternet(context: Context): Boolean {
+
+        // register activity with the connectivity manager service
+        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+
+        // if the android version is equal to M
+        // or greater we need to use the
+        // NetworkCapabilities to check what type of
+        // network has the internet connection
+
+        // Returns a Network object corresponding to
+        // the currently active default data network.
+        val network = connectivityManager.activeNetwork ?: return false
+
+        // Representation of the capabilities of an active network.
+        val activeNetwork = connectivityManager.getNetworkCapabilities(network) ?: return false
+
+        return when {
+            // Indicates this network uses a Wi-Fi transport,
+            // or WiFi has network connectivity
+            activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> true
+
+            // Indicates this network uses a Cellular transport. or
+            // Cellular has network connectivity
+            activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> true
+
+            // else return false
+            else -> false
+        }
+    }
+
+    // creating database
+    private val db = Firebase.firestore
+    private fun updateStatusToFirebase(text: String) {
+        readProfileFromStorage()
+        // https://saveyourtime.medium.com/firebase-cloud-firestore-add-set-update-delete-get-data-6da566513b1b
+        // https://firebase.google.com/docs/firestore/manage-data/add-data
+        if (checkForInternet(this))
+        {
+            println("updating status to firebase: $text")
+            // firestore update
+            // https://firebase.google.com/docs/firestore/manage-data/add-data
+            val documentName = userName.replace(" ", "").replace(".", "") + "Data"
+            println ("<-------- document name: $documentName")
+            db.collection("users").document(documentName).update("status", text)
+                .addOnSuccessListener { Log.d(MainActivity.TAG, "StatusToFirebase successfully updated!") }
+                .addOnFailureListener { e -> Log.w(MainActivity.TAG, "Error updateStatusToFirebase ", e) }
+        }
+        else
+        {
+            println("updating status to firebase failed please connect to internet")
+        }
+    }
+
+
+
 
 }
 
