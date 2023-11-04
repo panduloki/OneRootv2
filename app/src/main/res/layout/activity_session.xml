@@ -1,9 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".SessionActivity">
+
+    <ImageView
+        android:id="@+id/sessionImageView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#000"
+        android:contentDescription="@string/video" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/previousButton"
+        android:layout_width="95dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+
+        android:layout_marginStart="68dp"
+        android:layout_marginBottom="156dp"
+        android:adjustViewBounds="true"
+        android:background="@drawable/round_button"
+        android:text="@string/session_previous_button_name"
+        android:textAllCaps="false"
+        android:textColor="#000000"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:ignore="RelativeOverlap,RtlHardcoded" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/nextButton"
+        android:layout_width="95dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+
+        android:layout_marginEnd="80dp"
+        android:layout_marginBottom="156dp"
+        android:adjustViewBounds="true"
+        android:background="@drawable/round_button"
+        android:text="@string/session_next_button_name"
+        android:textAllCaps="false"
+        android:textColor="#000000"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:ignore="RelativeOverlap,RtlHardcoded" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
