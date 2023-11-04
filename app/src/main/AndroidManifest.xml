@@ -6,31 +6,25 @@
         <intent>
             <action android:name="android.media.action.IMAGE_CAPTURE" />
         </intent>
-    </queries>
-    <!-- camera permission from user -->
+    </queries> <!-- camera permission from user -->
     <uses-feature
         android:name="android.hardware.camera"
-        android:required="false" />
-    <!-- permissions -->
-    <uses-permission android:name="android.permission.CAMERA" />
-    <!--  storage permission  -->
+        android:required="false" /> <!-- permissions -->
+    <uses-permission android:name="android.permission.CAMERA" /> <!-- storage permission -->
     <uses-permission
         android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="32"
-        tools:ignore="ScopedStorage" />
-    <!-- internet permission   -->
+        tools:ignore="ScopedStorage" /> <!-- internet permission -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
-
-    <!-- location permission   -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" /> <!-- location permission -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
-    <!--if you have gallery issues https://github.com/captain-miao/AndroidException/issues/7 -->
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -38,15 +32,17 @@
         android:hardwareAccelerated="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:requestLegacyExternalStorage="true"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/OneRoot.NoActionBar"
-        android:requestLegacyExternalStorage="true"
         tools:targetApi="s">
-
+        <activity
+            android:name=".SessionActivity"
+            android:exported="false" />
         <!-- main activity starts here -->
         <activity
-            android:name="com.example.onerootv2.MainActivity"
+            android:name=".MainActivity"
             android:exported="true"
             android:theme="@style/OneRoot.NoActionBar">
             <intent-filter>
@@ -55,19 +51,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
         <activity
-            android:name="com.example.onerootv2.VideoActivity"
+            android:name=".VideoActivity"
             android:exported="false"
-            android:parentActivityName="com.example.onerootv2.MainActivity"
+            android:parentActivityName=".MainActivity"
             android:theme="@style/OneRoot.NoActionBar" />
-
         <activity
-            android:name="com.example.onerootv2.DisplayImageActivity"
+            android:name=".DisplayImageActivity"
             android:exported="false" />
-
         <activity
-            android:name="com.example.onerootv2.GalleryActivity"
+            android:name=".GalleryActivity"
             android:exported="false" />
 
         <provider
@@ -79,7 +72,6 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
-
     </application>
 
 </manifest>

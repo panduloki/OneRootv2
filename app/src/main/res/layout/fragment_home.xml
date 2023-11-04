@@ -13,11 +13,11 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:contentDescription="@string/background"
+        android:minHeight="48dp"
         android:scaleType="centerCrop"
         android:src="@drawable/b3"
-        tools:layout_editor_absoluteX="16dp"
-        tools:layout_editor_absoluteY="0dp"
-        android:minHeight="48dp"/>
+        tools:layout_editor_absoluteX="-38dp"
+        tools:layout_editor_absoluteY="0dp" />
 
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/sessionButton"
@@ -81,5 +81,19 @@
         tools:ignore="RelativeOverlap,RtlHardcoded"
         tools:visibility="visible"
         android:minHeight="48dp"/>
+
+    <androidx.appcompat.widget.AppCompatImageButton
+        android:id="@+id/sessionHistoryButton"
+        android:layout_width="60dp"
+        android:layout_height="55dp"
+        android:layout_marginTop="44dp"
+        android:layout_marginEnd="52dp"
+        android:background="@drawable/round_button"
+        android:paddingLeft="5dp"
+        android:src="@drawable/history_icon"
+        android:paddingRight="5dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

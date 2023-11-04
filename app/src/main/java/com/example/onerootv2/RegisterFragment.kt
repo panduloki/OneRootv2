@@ -1,13 +1,13 @@
 package com.example.onerootv2
 
 
-import android.content.Context
 //import android.content.Context.WIFI_SERVICE
+//import android.net.wifi.WifiManager
+import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
-//import android.net.wifi.WifiManager
 import android.os.Bundle
 import android.os.Environment
 import android.provider.Settings
@@ -161,8 +161,8 @@ class RegisterFragment : Fragment() {
                 // get wifi settings
                 //val wifi = activity?.getSystemService(WIFI_SERVICE) as WifiManager
                 builder?.setPositiveButton("connect to wifi") { _, _ ->
-                    //startActivity(Intent(Settings.ACTION_WIRELESS_SETTINGS))
-                    startActivity( Intent(Settings.ACTION_WIFI_SETTINGS))
+                    startActivity(Intent(Settings.ACTION_WIRELESS_SETTINGS))
+                    //startWifiIntent()
                     //wifi.isWifiEnabled = true
                     // save profile data when wifi enabled
                     saveProfileDataToFirebase()
@@ -275,7 +275,8 @@ class RegisterFragment : Fragment() {
                 "numberOfSessions" to 1,
                 "location" to selectedLocation,
                 "role" to selectedRole,
-                "status" to "user registered"
+                "status" to "user registered",
+                "command" to "no commands"
             )
 
             // Add a new document with a generated ID
@@ -361,6 +362,13 @@ class RegisterFragment : Fragment() {
         }
     }
 
+//    private fun startWifiIntent() {
+////        val intent = Intent(Settings.ACTION_WIFI_SETTINGS)
+////        startActivity(intent)
+//        val openWirelessSettings = Intent(android.provider.Settings.ACTION_WIFI_SETTINGS)
+//        activity?.startActivity(openWirelessSettings)
+//        println("checking wifi")
+//    }
 
 }
 

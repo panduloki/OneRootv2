@@ -15,6 +15,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.ImageButton
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.example.onerootv2.MainActivity.Companion.TAG
@@ -43,7 +44,7 @@ class HomeFragment : Fragment() {
     private lateinit var loadButtonEvent: Button
     private lateinit var unLoadButtonEvent: Button
     private lateinit var resumeSessionButton: Button
-
+    private lateinit var sessionHistoryButton: ImageButton
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -54,6 +55,7 @@ class HomeFragment : Fragment() {
         loadButtonEvent = view.findViewById(R.id.LoadButton)!!
         unLoadButtonEvent = view.findViewById(R.id.unLoadButton)!!
         resumeSessionButton = view.findViewById(R.id.sessionButton)!!
+        sessionHistoryButton = view.findViewById(R.id.sessionHistoryButton)!!
         return view
     }
 
@@ -69,6 +71,9 @@ class HomeFragment : Fragment() {
         // check for profile status updated or not
         val profileStoredInDb = sharedPref?.getBoolean("profileDb",true)
         val sessionStoredInDb = sharedPref?.getBoolean("sessionDb",true)
+
+        print(getCommandFromFireBase())
+
         if (profileStoredInDb != true)
         {
 
@@ -215,6 +220,7 @@ class HomeFragment : Fragment() {
         }
 
         println("sessionStatus: $sessionStatus")
+
         when (sessionStatus) {
             // loading paused
             3 -> {
@@ -275,7 +281,7 @@ class HomeFragment : Fragment() {
 
                     } catch (e: ActivityNotFoundException)
                     {
-                        Log.e(MainActivity.TAG, e.message.toString())
+                        Log.e(TAG, e.message.toString())
                     }
                 }
                 unLoadButtonEvent.setOnClickListener {
@@ -290,9 +296,11 @@ class HomeFragment : Fragment() {
                         // take video
                         dispatchTakeVideoIntent()
                     } catch (e: ActivityNotFoundException) {
-                        Log.e(MainActivity.TAG, e.message.toString())
+                        Log.e(TAG, e.message.toString())
                     }
                 }
+
+                sessionHistoryButton.setOnClickListener { dispatchSessionActivity() }
             }
         }
     }
@@ -312,8 +320,15 @@ class HomeFragment : Fragment() {
     private fun dispatchTakeVideoIntent() {
         val intent = Intent(activity, VideoActivity::class.java)
         startActivity(intent)
-        println("video activity closed")
+        println("home activity closed")
         replaceFragment(HomeFragment())
+        activity?.finish()
+    }
+
+    private fun dispatchSessionActivity() {
+        val intent = Intent(activity, SessionActivity::class.java)
+        startActivity(intent)
+        println("Home activity closed")
         activity?.finish()
     }
 
@@ -353,7 +368,9 @@ class HomeFragment : Fragment() {
                 "numberOfCoconuts" to numberOfCoconuts,
                 "numberOfSessions" to numberOfSessions,
                 "location" to location,
-                "role" to role
+                "role" to role,
+                "status" to "profile saved again when internet turned on",
+                "command" to "no commands"
             )
 
             // Add a new document with a generated ID
@@ -363,7 +380,7 @@ class HomeFragment : Fragment() {
                 .addOnSuccessListener {
 //                    Toast.makeText(activity, "firebase profile data updated", Toast.LENGTH_SHORT).show()
                     println("<-------------database updated ------------->")
-                    Log.d(MainActivity.TAG, "DocumentSnapshot added with ID:$documentName")
+                    Log.d(TAG, "DocumentSnapshot added with ID:$documentName")
 
                     // updating db status
                     editor?.apply {
@@ -373,7 +390,7 @@ class HomeFragment : Fragment() {
                 }
                 .addOnFailureListener { e ->
                     println("********************************************************")
-                    Log.w(MainActivity.TAG, "failed adding profile document to firebase", e)
+                    Log.w(TAG, "failed adding profile document to firebase", e)
 
                     // updating db status
                     editor?.apply {
@@ -564,8 +581,6 @@ class HomeFragment : Fragment() {
 
             val sessionDataFromFolder = Gson().toJson(readFromExternalStorage())
 
-            // creating database
-            val db = Firebase.firestore
             val sessionData = hashMapOf(
                 "sessionData" to sessionDataFromFolder
             )
@@ -577,7 +592,7 @@ class HomeFragment : Fragment() {
                 .addOnSuccessListener {
                     //Toast.makeText(activity, "firebase session updated again", Toast.LENGTH_SHORT).show()
                     println("session data updated successfully")
-                    Log.d(MainActivity.TAG, "DocumentSnapshot added with ID: data")
+                    Log.d(TAG, "DocumentSnapshot added with ID: data")
 
                     // update session status
                     editor?.apply {
@@ -587,7 +602,7 @@ class HomeFragment : Fragment() {
 
                 }
                 .addOnFailureListener { e ->
-                    Log.w(MainActivity.TAG, "Error adding document to firebase", e)
+                    Log.w(TAG, "Error adding document to firebase", e)
 
                     // update session status
                     editor?.apply {
@@ -617,6 +632,7 @@ class HomeFragment : Fragment() {
 
     private fun updateStatusToFirebase(text: String) {
         // https://saveyourtime.medium.com/firebase-cloud-firestore-add-set-update-delete-get-data-6da566513b1b
+        // https://firebase.google.com/docs/firestore/manage-data/add-data
 
         if (activity?.let { it1 -> checkForInternet(it1) } == true)
         {
@@ -636,4 +652,21 @@ class HomeFragment : Fragment() {
         }
     }
 
+    private fun getCommandFromFireBase(): String {
+        var commandValue = "no command from firebase"
+        val documentName = userName.replace(" ", "").replace(".", "") + "Data"
+
+        // Get the document
+        val documentReference = db.collection("users").document(documentName)
+        documentReference.get().addOnSuccessListener { documentSnapshot ->
+            // Get the field value
+            commandValue = documentSnapshot.get("command").toString()
+
+            // Do something with the field value
+            println("command: $commandValue")
+
+        }.addOnFailureListener { e -> Log.w(TAG, "Error getCommandFromFireBase ", e) }
+        return commandValue
+
+    }
 }
