@@ -51,6 +51,7 @@
     <string name="location_view_text">location</string>
     <string name="session_previous_button_name">previous Button</string>
     <string name="session_next_button_name">next Button</string>
+    <string name="uninstallText">App Down !!!!! \nPlease uninstall \nthis app</string>
 
     <string-array name="location_list">
         <item>Chamrajnagar</item>

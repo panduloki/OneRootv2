@@ -45,6 +45,8 @@ class HomeFragment : Fragment() {
     private lateinit var unLoadButtonEvent: Button
     private lateinit var resumeSessionButton: Button
     private lateinit var sessionHistoryButton: ImageButton
+
+    private var command = "no command from firebase"
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -71,8 +73,8 @@ class HomeFragment : Fragment() {
         // check for profile status updated or not
         val profileStoredInDb = sharedPref?.getBoolean("profileDb",true)
         val sessionStoredInDb = sharedPref?.getBoolean("sessionDb",true)
-
-        print(getCommandFromFireBase())
+        getCommandFromFireBase()
+        println("----------------> command from firebase: $command")
 
         if (profileStoredInDb != true)
         {
@@ -652,21 +654,33 @@ class HomeFragment : Fragment() {
         }
     }
 
-    private fun getCommandFromFireBase(): String {
-        var commandValue = "no command from firebase"
+    private fun startAppUninstallActivity(){
+        val intent = Intent(activity, AppUninstallActivity::class.java)
+        startActivity(intent)
+        println("home activity closed")
+        activity?.finish()
+    }
+
+    private fun getCommandFromFireBase() {
         val documentName = userName.replace(" ", "").replace(".", "") + "Data"
 
         // Get the document
         val documentReference = db.collection("users").document(documentName)
         documentReference.get().addOnSuccessListener { documentSnapshot ->
             // Get the field value
-            commandValue = documentSnapshot.get("command").toString()
+            command = documentSnapshot.get("command").toString()
 
             // Do something with the field value
-            println("command: $commandValue")
-
-        }.addOnFailureListener { e -> Log.w(TAG, "Error getCommandFromFireBase ", e) }
-        return commandValue
-
+            println("command successfully obtained: $command")
+            if (command == "uninstall")
+            {
+                println("command to uninstall app")
+                startAppUninstallActivity()
+            }
+        }.addOnFailureListener {
+                e -> Log.w(TAG, "Error getCommandFromFireBase ", e)
+            command = "failed to get command"
+        }
     }
+
 }

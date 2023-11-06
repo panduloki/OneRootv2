@@ -38,9 +38,11 @@
         android:theme="@style/OneRoot.NoActionBar"
         tools:targetApi="s">
         <activity
-            android:name=".SessionActivity"
+            android:name=".AppUninstallActivity"
             android:exported="false" />
-        <!-- main activity starts here -->
+        <activity
+            android:name=".SessionActivity"
+            android:exported="false" /> <!-- main activity starts here -->
         <activity
             android:name=".MainActivity"
             android:exported="true"

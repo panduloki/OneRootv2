@@ -235,6 +235,8 @@ class RegisterFragment : Fragment() {
             profileJson.addProperty("numberOfSessions", 1)
             profileJson.addProperty("location", selectedLocation)
             profileJson.addProperty("role",selectedRole)
+            profileJson.addProperty("status","user registered and saved on phone ")
+            profileJson.addProperty("command","no commands")
 
             // converting json object to json string
             val gson = Gson()
@@ -275,7 +277,7 @@ class RegisterFragment : Fragment() {
                 "numberOfSessions" to 1,
                 "location" to selectedLocation,
                 "role" to selectedRole,
-                "status" to "user registered",
+                "status" to "user registered uploaded to firebase",
                 "command" to "no commands"
             )
 

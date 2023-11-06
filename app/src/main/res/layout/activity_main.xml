@@ -16,6 +16,17 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/mainImageView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="@string/background"
+            android:minHeight="48dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/b3"
+            tools:layout_editor_absoluteX="-38dp"
+            tools:layout_editor_absoluteY="0dp" />
     </FrameLayout>
     <!-- problem with icons  https://stackoverflow.com/questions/71280302/my-bottom-navigation-bar-is-not-showing-up-any-icons-or-text#comment125995838_71280302  -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
