@@ -27,6 +27,7 @@ class SessionActivity : AppCompatActivity() {
     private lateinit var nextButton: Button
     private var id2 = 0
     private var noOfFiles = 0
+    private var userName = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -136,26 +137,31 @@ class SessionActivity : AppCompatActivity() {
         val metadata = storageMetadata {
             contentType = "image/jpeg"
         }
-
+        readUsernameFromStorage()
         // Upload file and metadata to the path 'images/mountains.jpg'
-        val uploadTask = storageRef.child("images/${uri1.lastPathSegment}").putFile(uri1, metadata)
+        if (userName!="") {
+            userName = userName.replace(" ","").replace(".","")
+            val uploadTask = storageRef.child("${userName}_images/${uri1.lastPathSegment}")
+                .putFile(uri1, metadata)
 
-        // Listen for state changes, errors, and completion of the upload.
-        // You'll need to import com.google.firebase.storage.component1 and
-        // com.google.firebase.storage.component2
-        uploadTask.addOnProgressListener {
-            val progress = (100.0 * it.bytesTransferred) / it.totalByteCount
-            println("Upload is $progress% done")
-        }.addOnPausedListener {
-            println("Upload is paused")
-        }.addOnFailureListener {
-            // Handle unsuccessful uploads
-            println("error: uploading image to goggle cloud")
-        }.addOnSuccessListener {
-            // Handle successful uploads on complete
-            // ...
-            println("image uploaded to google successfully")
+            // Listen for state changes, errors, and completion of the upload.
+            // You'll need to import com.google.firebase.storage.component1 and
+            // com.google.firebase.storage.component2
+            uploadTask.addOnProgressListener {
+                val progress = (100.0 * it.bytesTransferred) / it.totalByteCount
+                println("Upload is $progress% done")
+            }.addOnPausedListener {
+                println("Upload is paused")
+            }.addOnFailureListener {
+                // Handle unsuccessful uploads
+                println("error: uploading image to goggle cloud")
+            }.addOnSuccessListener {
+                // Handle successful uploads on complete
+                // ...
+                println("image uploaded to google successfully")
+            }
         }
+        println("error in SessionActivity: username was null fail to upload images to cloud")
 
     }
 
@@ -247,5 +253,73 @@ class SessionActivity : AppCompatActivity() {
         startActivity(intent)
         this.finish()
     }
+
+    private fun readUsernameFromStorage()
+    {
+        // https://www.youtube.com/watch?v=JUlZYddw03o
+        // https://github.com/sandipapps/ExternalStorageDemo/blob/master/app/src/main/java/com/sandipbhattacharya/externalstoragedemo/MainActivity.java
+
+        val filepath = "OneRootFiles"
+        val fileName  = "profile.json"
+        println("storing detection json data on video activity")
+        println("storing json data")
+
+        fun isExternalStorageReadable(): Boolean {
+            val state = Environment.getExternalStorageState()
+            return Environment.MEDIA_MOUNTED == state || Environment.MEDIA_MOUNTED_READ_ONLY == state
+        }
+
+        fun readFromExternalStorage(): String {
+            val myExternalFile = File(this.getExternalFilesDir(filepath), fileName)
+            val stringBuilder = StringBuilder()
+            try {
+                val fileReader = FileReader(myExternalFile)
+                val bufferedReader = BufferedReader(fileReader)
+                var line: String?
+                while (bufferedReader.readLine().also { line = it } != null) {
+                    stringBuilder.append(line)
+                }
+                bufferedReader.close()
+            } catch (e: FileNotFoundException) {
+                e.printStackTrace()
+            } catch (e: IOException) {
+                e.printStackTrace()
+            }
+            return stringBuilder.toString()
+        }
+
+        // read file  from external storage
+        try {
+            if (isExternalStorageReadable()) {
+                println("reading from json data file")
+                val dataFromJson = readFromExternalStorage()
+                println(" json data:  $dataFromJson")
+                val jsonObject = JSONObject(dataFromJson)
+                userName = jsonObject.getString("username")
+                //mobileNo = jsonObject.getString("mobileNo")
+                //location = jsonObject.getString("location")
+                //role = jsonObject.getString("role")
+//                println("username from file: $userName")
+//                println("mobile No from file: $mobileNo")
+
+            }
+            else {
+                Toast.makeText(
+                    this,
+                    "External storage not available for reading",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+        catch (e: JSONException) {
+            println("error in profile fragment: json file cant be read")
+            println(e)
+            e.printStackTrace()
+        }
+        finally {
+            println("profile data read from folder successfully")
+        }
+    }
+
 
 }
