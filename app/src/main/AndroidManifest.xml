@@ -38,6 +38,9 @@
         android:theme="@style/OneRoot.NoActionBar"
         tools:targetApi="s">
         <activity
+            android:name=".UploadToCloudActivity"
+            android:exported="false" />
+        <activity
             android:name=".AppUninstallActivity"
             android:exported="false" />
         <activity

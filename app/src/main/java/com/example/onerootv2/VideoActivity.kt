@@ -650,6 +650,12 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
                 }
             }
         }
+        // updating image no
+        editor?.apply {
+            putInt("imageNo",no)
+            apply() //asynchronously
+        }
+
         model.close()
         cameraDevice.close()
         finish()

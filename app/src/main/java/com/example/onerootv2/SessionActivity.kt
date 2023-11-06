@@ -161,8 +161,10 @@ class SessionActivity : AppCompatActivity() {
                 println("image uploaded to google successfully")
             }
         }
-        println("error in SessionActivity: username was null fail to upload images to cloud")
-
+        else
+        {
+            println("error in SessionActivity: username was null fail to upload images to cloud")
+        }
     }
 
 

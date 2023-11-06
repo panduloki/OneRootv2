@@ -66,13 +66,26 @@ class ProfileFragment : Fragment() {
         galleryButton?.setOnClickListener {
             dispatchGalleryIntent()
         }
+
+        val uploadButton = view1.findViewById<Button>(R.id.cloud_upload_button)
+        uploadButton?.setOnClickListener {
+            dispatchUploadActivity()
+        }
+
         return view1
 
     }
-    private fun dispatchGalleryIntent() {
+    private fun dispatchGalleryIntent()
+    {
         val i = Intent(activity, GalleryActivity::class.java)
         startActivity(i)
         (activity as Activity?)!!.overridePendingTransition(0, 0)
+    }
+
+    private fun dispatchUploadActivity()
+    {
+        val i = Intent(activity, UploadToCloudActivity::class.java)
+        startActivity(i)
     }
 
     private fun readProfileFromStorage()
