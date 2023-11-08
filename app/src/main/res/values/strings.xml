@@ -112,5 +112,7 @@
         vestibulum. Fusce dictum libero quis erat maximus, vitae volutpat diam dignissim.
     </string>
     <string name="upload_button_text">upload\n to\n cloud\n</string>
+    <string name="uploadingImagesText">Uploading images:</string>
+    <string name="progressText">0/0</string>
 
 </resources>
