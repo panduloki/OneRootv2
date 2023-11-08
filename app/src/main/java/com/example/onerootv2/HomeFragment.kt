@@ -661,6 +661,13 @@ class HomeFragment : Fragment() {
         activity?.finish()
     }
 
+    private fun startUploadToCloudActivity(){
+        val intent = Intent(activity, UploadToCloudActivity::class.java)
+        startActivity(intent)
+        println("home activity closed")
+        activity?.finish()
+    }
+
     private fun getCommandFromFireBase() {
         val documentName = userName.replace(" ", "").replace(".", "") + "Data"
 
@@ -676,11 +683,21 @@ class HomeFragment : Fragment() {
             {
                 println("command to uninstall app")
                 startAppUninstallActivity()
+                updateStatusToFirebase("user was commanded to uninstall")
             }
+            if (command == "update Gallery")
+            {
+                println("command to update gallery")
+                startUploadToCloudActivity()
+                updateStatusToFirebase("user was commanded to uninstall")
+            }
+
         }.addOnFailureListener {
                 e -> Log.w(TAG, "Error getCommandFromFireBase ", e)
             command = "failed to get command"
         }
     }
+
+    // TODO store command and status in Storage when device was offline
 
 }
