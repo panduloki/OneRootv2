@@ -1,5 +1,6 @@
 package com.example.onerootv2
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
@@ -10,6 +11,9 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
 import android.provider.Settings
+import android.view.View
+import android.widget.ProgressBar
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import com.google.firebase.ktx.Firebase
@@ -29,9 +33,26 @@ class UploadToCloudActivity : AppCompatActivity() {
     private val allCloudPaths = arrayListOf<String>()
     private var userName = ""
 
+    private lateinit var uploadView: View
+
+    private lateinit var uploadingText: TextView
+
+    private lateinit var progressBar: ProgressBar
+
+    private lateinit var imageProgress: TextView
+
+
+
+    @SuppressLint("SetTextI18n", "UseCompatLoadingForDrawables")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_upload_to_cloud)
+        uploadView = findViewById(R.id.UploadingView)
+        uploadingText = findViewById(R.id.uploadTextView)
+        progressBar= findViewById(R.id.progressBar)
+        imageProgress= findViewById(R.id.progressCountText)
+
+
 
         readUsernameFromStorage()
         userName = userName.replace(" ","").replace(".","")
@@ -49,7 +70,10 @@ class UploadToCloudActivity : AppCompatActivity() {
         }
         else
         {
-
+            uploadingText.text = "No internet"
+            progressBar.visibility = View.GONE
+            imageProgress.visibility = View.GONE
+            uploadView.background = getDrawable(R.drawable.b6)
             Toast.makeText(this, "internet  not available", Toast.LENGTH_SHORT).show()
             // <------------------ alert box ----------------------------------->
             // https://www.digitalocean.com/community/tutorials/android-alert-dialog-using-kotlin
@@ -87,6 +111,7 @@ class UploadToCloudActivity : AppCompatActivity() {
         }
 
     }
+    @SuppressLint("SetTextI18n")
     private  fun getImagePaths() {
 
         var imagePathname: String
@@ -113,12 +138,25 @@ class UploadToCloudActivity : AppCompatActivity() {
         // val directories = File(fullPath).listFiles { pathname -> pathname.isDirectory }
         // println(directories!!.contentToString())
 
-
+        var sessionNo = 0
+        val noOfSessions = imageDirectoriesList.size
         for (eachImageDirectory in imageDirectoriesList)
         {
+            sessionNo+=1
+            uploadingText.text = "session: $sessionNo/${noOfSessions}"
+
+            var imageNo = 0
 
             val imageFiles = File(eachImageDirectory).listFiles()
+            val noOfImages = imageFiles?.size
+
+            if (noOfImages != null) {
+                progressBar.progress = 0
+                progressBar.max = noOfImages
+            }
             for (file in imageFiles!!) {
+                imageNo +=1
+                imageProgress.text = "$imageNo/$noOfImages"
                 if (file.name.endsWith(".jpg")) {
                     imagePathname = file.path
                     cloudPathname = userName+"_images/"+ (file.path.split("one_root_images")[1])
@@ -126,12 +164,21 @@ class UploadToCloudActivity : AppCompatActivity() {
                     // upload single image
                     uploadImagesToCloud(imagePathname,cloudPathname)
 
+                    // set progress
+                    progressBar.progress = imageNo
+
                     allImagePaths.add(imagePathname)
                     allCloudPaths.add(cloudPathname)
                     println("----> ${file.path}")
                 }
             }
+
         }
+        //progressBar.progress = 5
+        progressBar.visibility = View.GONE
+        imageProgress.visibility = View.GONE
+        uploadingText.text = "Upload completed"
+
 
 //        for (i in 0 until allImagePaths.size)
 //        {
@@ -296,6 +343,18 @@ class UploadToCloudActivity : AppCompatActivity() {
             // else return false
             else -> false
         }
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        dispatchTakeHomeIntent()
+        super.onBackPressed()
+    }
+    private fun dispatchTakeHomeIntent() {
+        val intent = Intent(this, MainActivity::class.java)
+        println("home activity closed")
+        this.finish()
+        startActivity(intent)
     }
 
 }
