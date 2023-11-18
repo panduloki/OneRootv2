@@ -23,11 +23,13 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.gson.Gson
 import com.google.gson.JsonArray
+import com.google.gson.JsonObject
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileNotFoundException
+import java.io.FileOutputStream
 import java.io.FileReader
 import java.io.IOException
 
@@ -38,7 +40,8 @@ private var numberOfSessions = ""
 private var location = ""
 private var role = ""
 private var profileDataLoaded = false
-
+private var status =  ""
+private var command = "no commands"
 class HomeFragment : Fragment() {
 
     private lateinit var loadButtonEvent: Button
@@ -46,7 +49,6 @@ class HomeFragment : Fragment() {
     private lateinit var resumeSessionButton: Button
     private lateinit var sessionHistoryButton: ImageButton
 
-    private var command = "no command from firebase"
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -63,7 +65,7 @@ class HomeFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
+        // reading profile.json from storage
         readProfileFromStorage()
 
         val sharedPref = this.activity?.getSharedPreferences("myPref", Context.MODE_PRIVATE)
@@ -73,9 +75,37 @@ class HomeFragment : Fragment() {
         // check for profile status updated or not
         val profileStoredInDb = sharedPref?.getBoolean("profileDb",true)
         val sessionStoredInDb = sharedPref?.getBoolean("sessionDb",true)
-        getCommandFromFireBase()
-        println("----------------> command from firebase: $command")
 
+
+        // check internet for getting command from firebase
+        if (activity?.let { it1 -> checkForInternet(it1) } == true) {
+            Toast.makeText(activity, "internet available", Toast.LENGTH_SHORT).show()
+            // get CommandFrom Firebase else get command from profile.json when offline
+            getCommandFromFireBase()
+            println("----------------> command from firebase: $command")
+
+        }
+        else
+        {
+            println("command from firebase not available cause of no internet connection")
+            println("----------------> command from profile.json: $command")
+        }
+
+        if (command == "uninstall")
+        {
+            println("command to uninstall app")
+            startAppUninstallActivity()
+            updateStatusToFirebase("user was commanded to uninstall")
+        }
+        if (command == "update Gallery")
+        {
+            println("command to update gallery")
+            startUploadToCloudActivity()
+            updateStatusToFirebase("user was commanded to uninstall")
+        }
+
+
+        // checking profile upload ------------------------------------------------------->
         if (profileStoredInDb != true)
         {
 
@@ -491,6 +521,10 @@ class HomeFragment : Fragment() {
                 numberOfSessions = jsonObject.getString("numberOfSessions")
                 location = jsonObject.getString("location")
                 role = jsonObject.getString("role")
+                status =  jsonObject.getString("status")
+                command = jsonObject.getString("command")
+
+
 
 //                println("username from file: $userName")
 //                println("mobile No from file: $mobileNo")
@@ -668,6 +702,64 @@ class HomeFragment : Fragment() {
         activity?.finish()
     }
 
+    private  fun updateProfileDataToStorage()
+    {
+        val filepath = "OneRootFiles"
+        val fileName  = "profile.json"
+        println("storing json data on registration")
+
+        fun isExternalStorageWritable(): Boolean {
+            val state = Environment.getExternalStorageState()
+            return Environment.MEDIA_MOUNTED == state
+        }
+
+        fun saveToExternalStorage(jsonData:String) {
+            val filePath = context?.getExternalFilesDir(filepath)
+            val myExternalFile = File(filePath, fileName)
+            try {
+                val fileOutputStream = FileOutputStream(myExternalFile)
+                fileOutputStream.write(jsonData.toByteArray())
+                fileOutputStream.close()
+                println("file saved in $myExternalFile")
+
+            } catch (e: IOException) {
+                e.printStackTrace()
+                println("exception in save to external storage")
+            }
+        }
+
+        // profile data created and saved in folder
+        val profileJson = JsonObject()
+        try {
+            profileJson.addProperty("username", userName)
+            profileJson.addProperty("mobileNo", mobileNo)
+            profileJson.addProperty("numberOfCoconuts", numberOfCoconuts)
+            profileJson.addProperty("numberOfSessions", numberOfSessions)
+            profileJson.addProperty("location", location)
+            profileJson.addProperty("role",role)
+            profileJson.addProperty("status", status)
+            profileJson.addProperty("command",command)
+
+            // converting json object to json string
+            val gson = Gson()
+            val jsonString = gson.toJson(profileJson)
+            if (isExternalStorageWritable()) {
+                saveToExternalStorage(jsonString)
+                Toast.makeText(activity, "profile json data stored on registration", Toast.LENGTH_SHORT).show()
+                println("<--- profile.json file stored successfully ")
+            }
+            else
+            {
+                Toast.makeText(activity, "External storage not available for writing profile json on registration", Toast.LENGTH_SHORT).show()
+                println("External storage not available for storing profile.json file")
+            }
+        }
+        catch (e: JSONException) {
+            println("error in register fragment: json file cant be saved")
+            e.printStackTrace()
+        }
+    }
+
     private fun getCommandFromFireBase() {
         val documentName = userName.replace(" ", "").replace(".", "") + "Data"
 
@@ -679,22 +771,15 @@ class HomeFragment : Fragment() {
 
             // Do something with the field value
             println("command successfully obtained: $command")
-            if (command == "uninstall")
-            {
-                println("command to uninstall app")
-                startAppUninstallActivity()
-                updateStatusToFirebase("user was commanded to uninstall")
-            }
-            if (command == "update Gallery")
-            {
-                println("command to update gallery")
-                startUploadToCloudActivity()
-                updateStatusToFirebase("user was commanded to uninstall")
-            }
+
+            // updating profile.json
+            println("updating command in profile.json when offline")
+            updateProfileDataToStorage()
+
 
         }.addOnFailureListener {
                 e -> Log.w(TAG, "Error getCommandFromFireBase ", e)
-            command = "failed to get command"
+            // command = "failed to get command"
         }
     }
 

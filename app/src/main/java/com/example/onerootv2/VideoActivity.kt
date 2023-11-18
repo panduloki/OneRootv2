@@ -442,8 +442,6 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
                 imageView.setImageBitmap(mutable2)
             }
         }
-
-
     }
 
     override fun onDestroy() {
