@@ -89,10 +89,7 @@ var bestPicSelected = false
 var bestPic: Bitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888)
 var best_count = 0
 
-var sessionStatus = ""
-var sessionType = ""
-var sessionNo = 0
-var sessionUser = ""
+
 
 var captureButtonPressed = false
 
@@ -290,7 +287,7 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
                 if (showBestPic)
                 {
                     // best results are stored
-                    if (bestPicSelected) {
+                    if ((bestPicSelected) and (best_count>0)) {
                         val canvas5 = Canvas(bestPic)
                         paint.color = Color.RED
                         paint.style = Paint.Style.FILL

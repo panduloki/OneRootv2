@@ -38,6 +38,9 @@
         android:theme="@style/OneRoot.NoActionBar"
         tools:targetApi="s">
         <activity
+            android:name=".RecyclerViewGalleryActivity"
+            android:exported="false" />
+        <activity
             android:name=".UploadToCloudActivity"
             android:exported="false" />
         <activity
