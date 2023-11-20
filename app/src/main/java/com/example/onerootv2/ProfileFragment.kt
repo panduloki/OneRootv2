@@ -27,6 +27,7 @@ private var  lastSessionCoconuts= 0
 private var numberOfSessions = ""
 private var location = ""
 private var role = ""
+private var sessionDataReadable = false
 
 
 var sessionStatus = ""
@@ -52,14 +53,16 @@ class ProfileFragment : Fragment() {
 
         // read session data from storage
         readSessionFromStorage()
+        if (sessionDataReadable)
+        {
+            // getting no of coconuts from last session
+            println("session data from session.json $sessionData")
 
-        // getting no of coconuts from last session
-        println("session data from session.json $sessionData")
+            detectionList = convertListCharToList(sessionData)
 
-        detectionList = convertListCharToList(sessionData)
+            println("after converting session data to list of integers detection data: $detectionList")
+        }
 
-        println("after converting session data to list of integers detection data: $detectionList")
-        // getting total last session count
 
 
 
@@ -231,8 +234,10 @@ class ProfileFragment : Fragment() {
 //                time = jsonObject1.getString("time")
 //                date = jsonObject1.getString("date")
 //                sessionUser = jsonObject1.getString("sessionUser")
+                sessionDataReadable = true
 
             } else {
+                sessionDataReadable = false
                 Toast.makeText(
                     context,
                     "External storage not available for reading",
@@ -241,6 +246,7 @@ class ProfileFragment : Fragment() {
             }
         }
         catch (e: JSONException) {
+            sessionDataReadable = false
             println("error in profile fragment: session.json file cant be read")
             println(e)
             e.printStackTrace()
