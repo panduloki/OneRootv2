@@ -6,6 +6,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.graphics.*
+//import android.hardware.camera2.CameraAccessException
 import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraManager
@@ -24,6 +25,7 @@ import android.view.TextureView
 import android.view.View
 import android.view.View.OnTouchListener
 import android.widget.Button
+//import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -61,6 +63,7 @@ private var role = ""
 var  playNewSessionClicked = false
 var  stopButtonClicked = false
 var  pauseButtonClicked = false
+
 // global variables
 var present_coconut_count = 0
 var present_session_coconut_count = 0
@@ -116,6 +119,9 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
 
     private var detections = mutableListOf<Int>()
     private var no = 0
+
+//    private var flashLightStatus = true
+//    private lateinit var flashLightButton: ImageButton
 
     @SuppressLint("SimpleDateFormat")
     private fun getTime(): String {
@@ -231,6 +237,8 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
         imageView = findViewById(R.id.imageView)
         textureView = findViewById(R.id.textureView)
 
+//        flashLightButton = findViewById(R.id.flashlight)
+
 
         labels = FileUtil.loadLabels(this, "coconut_labels.txt")
         imageProcessor = ImageProcessor.Builder().add(ResizeOp(300, 300, ResizeOp.ResizeMethod.BILINEAR)).build()
@@ -272,6 +280,8 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
                 // get picture from camera
                 bitmap = textureView.bitmap!!
                 var mutable2 = bitmap.copy(Bitmap.Config.ARGB_8888, true)
+
+
 
                 // update mode based on switch
                 if(switchButton.isChecked!= autoCapture){
@@ -612,6 +622,12 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
                 }
 
             }
+
+            // flashlight
+//            R.id.flashlight ->{
+//                println("flashlight clicked")
+//                flashLightStatus = true
+//            }
         }
 
 
@@ -1729,6 +1745,35 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
             println("updating status to firebase failed please connect to internet")
         }
     }
+
+    // flash light
+    // https://www.ssaurel.com/blog/create-a-torch-flashlight-application-for-android/
+//    private fun flashLightOn() {
+//        val cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
+//        try {
+//            val cameraId = cameraManager.cameraIdList[0]
+//            cameraManager.setTorchMode(cameraId, true)
+//            flashLightStatus = true
+//            flashLightButton.setImageResource(R.drawable.flashlight_on)
+//        }
+//        catch (e: CameraAccessException) {
+//            println("error: flashlight was not able to turned on")
+//        }
+//    }
+//
+//    private fun flashLightOff() {
+//        val cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
+//        try {
+//            val cameraId = cameraManager.cameraIdList[0]
+//            cameraManager.setTorchMode(cameraId, false)
+//            flashLightStatus = false
+//            flashLightButton.setImageResource(R.drawable.flashlight_off)
+//        } catch (e: CameraAccessException) {
+//            println("error: flashlight was not able to turned off")
+//        }
+//    }
+
+
 }
 
 

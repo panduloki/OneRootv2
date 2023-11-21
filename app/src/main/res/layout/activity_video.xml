@@ -87,4 +87,15 @@
         android:textColor="#000000"
         tools:ignore="RelativeOverlap,RtlHardcoded" />
 
+<!--    <androidx.appcompat.widget.AppCompatImageButton-->
+<!--        android:id="@+id/flashlight"-->
+<!--        android:layout_width="64dp"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_alignParentEnd="true"-->
+<!--        android:layout_alignParentBottom="true"-->
+<!--        android:layout_marginEnd="311dp"-->
+<!--        android:layout_marginBottom="612dp"-->
+<!--        android:src="@drawable/flashlight_off"-->
+<!--        android:background="@color/black" />-->
+
 </RelativeLayout>
