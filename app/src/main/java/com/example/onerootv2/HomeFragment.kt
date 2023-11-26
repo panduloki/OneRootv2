@@ -23,14 +23,13 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.gson.Gson
 import com.google.gson.JsonArray
-import com.google.gson.JsonObject
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileNotFoundException
-import java.io.FileOutputStream
 import java.io.FileReader
+import java.io.FileWriter
 import java.io.IOException
 
 private var userName = ""
@@ -48,6 +47,9 @@ class HomeFragment : Fragment() {
     private lateinit var unLoadButtonEvent: Button
     private lateinit var resumeSessionButton: Button
     private lateinit var sessionHistoryButton: ImageButton
+
+    // creating database
+    private val db = Firebase.firestore
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -81,13 +83,14 @@ class HomeFragment : Fragment() {
         if (activity?.let { it1 -> checkForInternet(it1) } == true) {
             Toast.makeText(activity, "internet available", Toast.LENGTH_SHORT).show()
             // get CommandFrom Firebase else get command from profile.json when offline
-            getCommandFromFireBase()
+            command = getCommandFromFireBase()
             println("----------------> command from firebase: $command")
 
         }
         else
         {
             println("command from firebase not available cause of no internet connection")
+            command = getCommandFromProfileJson()
             println("----------------> command from profile.json: $command")
         }
 
@@ -337,31 +340,9 @@ class HomeFragment : Fragment() {
         }
     }
 
-
     override fun onDestroyView() {
         updateStatusToFirebase("user was offline")
         super.onDestroyView()
-    }
-
-//    private fun returnFragmentBack() {
-//        activity?.supportFragmentManager?.popBackStack()
-//
-//    }
-
-    // video intent function
-    private fun dispatchTakeVideoIntent() {
-        val intent = Intent(activity, VideoActivity::class.java)
-        startActivity(intent)
-        println("home activity closed")
-        replaceFragment(HomeFragment())
-        activity?.finish()
-    }
-
-    private fun dispatchSessionActivity() {
-        val intent = Intent(activity, SessionActivity::class.java)
-        startActivity(intent)
-        println("Home activity closed")
-        activity?.finish()
     }
 
     private fun replaceFragment(fragment : Fragment){
@@ -372,78 +353,87 @@ class HomeFragment : Fragment() {
         fragmentTransaction?.commit()
     }
 
-//    private fun restartActivity() {
-//        super.onDestroy()
-//        val i = Intent(activity, MainActivity::class.java)
-//        activity?.finish()
-//        activity?.overridePendingTransition(0, 0)
-//        startActivity(i)
-////        activity?.overridePendingTransition(0, 0)
-//    }
+    // activity or fragment dispatch functions
+    private fun dispatchTakeVideoIntent() {
+        val intent = Intent(activity, VideoActivity::class.java)
+        startActivity(intent)
+        println("home activity closed")
+        replaceFragment(HomeFragment())
+        activity?.finish()
+    }
+    private fun dispatchSessionActivity() {
+        val intent = Intent(activity, SessionActivity::class.java)
+        startActivity(intent)
+        println("Home activity closed")
+        activity?.finish()
+    }
+    private fun startAppUninstallActivity(){
+        val intent = Intent(activity, AppUninstallActivity::class.java)
+        startActivity(intent)
+        println("home activity closed")
+        activity?.finish()
+    }
+    private fun startUploadToCloudActivity(){
+        val intent = Intent(activity, UploadToCloudActivity::class.java)
+        startActivity(intent)
+        println("home activity closed")
+        activity?.finish()
+    }
 
-    // creating database
-    private val db = Firebase.firestore
 
-    private fun saveProfileDataToFirebase()
+    private fun saveErrorsInTextToStorage(errorString: String)
     {
+        val textFilePath = "OneRootFiles"
+        val fileName  = "errors.txt"
+        println("errors raised storing errors in txt file")
+        val filePath = activity?.getExternalFilesDir(textFilePath)
+        val myExternalFile = File(filePath, fileName)
 
-        //shared preferences
-        val sharedPref = activity?.getSharedPreferences("myPref", Context.MODE_PRIVATE)
-        val editor = sharedPref?.edit()
-
-        // firebase activation
-        //https://www.youtube.com/watch?v=rFTJTLdoGDY&list=PLHQRWugvckFry9Q1OT6hLNfyUizT73PwX&index=2
-        try {
-            val user = hashMapOf(
-                "username" to userName,
-                "mobileNo" to mobileNo,
-                "numberOfCoconuts" to numberOfCoconuts,
-                "numberOfSessions" to numberOfSessions,
-                "location" to location,
-                "role" to role,
-                "status" to "profile saved again when internet turned on",
-                "command" to "no commands"
-            )
-
-            // Add a new document with a generated ID
-            val documentName = userName.replace(" ","").replace(".","")+ "Data"
-            db.collection("users").document(documentName)
-                .set(user)
-                .addOnSuccessListener {
-//                    Toast.makeText(activity, "firebase profile data updated", Toast.LENGTH_SHORT).show()
-                    println("<-------------database updated ------------->")
-                    Log.d(TAG, "DocumentSnapshot added with ID:$documentName")
-
-                    // updating db status
-                    editor?.apply {
-                        putBoolean("profileDb",true)
-                        apply()
-                    }
-                }
-                .addOnFailureListener { e ->
-                    println("********************************************************")
-                    Log.w(TAG, "failed adding profile document to firebase", e)
-
-                    // updating db status
-                    editor?.apply {
-                        putBoolean("profileDb",false)
-                        apply()
-                    }
-                }
+        fun isExternalStorageWritable(): Boolean {
+            val state = Environment.getExternalStorageState()
+            return Environment.MEDIA_MOUNTED == state
         }
-        catch (e:Exception)
+
+        try
         {
-            // updating db status
-            editor?.apply {
-                putBoolean("profileDb",false)
-                apply()
+            if (isExternalStorageWritable())
+            {
+                if (myExternalFile.exists())
+                {
+                    println("errors.txt file exists read line from it and update")
+                    val fileReader = BufferedReader(FileReader(myExternalFile))
+                    val text = fileReader.readText()
+                    fileReader.close()
+
+                    val newText = "$text\n<--------------------------->\n$errorString\n"
+                    val fileWriter = FileWriter(myExternalFile)
+                    fileWriter.write(newText)
+                    fileWriter.close()
+                }
+                else
+                {
+                    println("errors.txt file does not exist make a new file and update")
+                    val fileWriter = FileWriter(myExternalFile)
+                    fileWriter.write("$errorString\n")
+                    fileWriter.close()
+                }
+                // Toast.makeText(this, "errors are stored in text file", Toast.LENGTH_SHORT).show()
+                println("<---errors.txt file stored successfully ")
             }
-            println("error in home fragment/ save profile data in fire base: $e" )
+            else
+            {
+                Toast.makeText(activity, "External storage not available for writing errors.txt", Toast.LENGTH_SHORT).show()
+                println("External storage not available for storing errors.txt file")
+            }
         }
+        catch (e: Exception) {
+            println("error in videoActivity/saveErrorsInTextToStorage() : errors.txt cant be saved")
+            e.printStackTrace()
+        }
+
 
 
     }
-
     private fun checkForInternet(context: Context): Boolean {
 
         // register activity with the connectivity manager service
@@ -475,6 +465,7 @@ class HomeFragment : Fragment() {
         }
     }
 
+    // profile related functions
     private fun readProfileFromStorage()
     {
         // https://www.youtube.com/watch?v=JUlZYddw03o
@@ -549,15 +540,296 @@ class HomeFragment : Fragment() {
             // updating status
             profileDataLoaded = false
 
-            println("error in Home fragment: profile json file cant be read")
-            println(e)
+            println("error in HomeFragment/readProfileFromStorage(): failed to read profile.json ")
             e.printStackTrace()
+            val errorString = "\n error in HomeFragment/readProfileFromStorage(): failed to read profile.json \n${e.message}"
+            saveErrorsInTextToStorage(errorString)
         }
         finally {
             println("profile data read from folder successfully")
         }
     }
+    private fun saveProfileDataToFirebase()
+    {
 
+        //shared preferences
+        val sharedPref = activity?.getSharedPreferences("myPref", Context.MODE_PRIVATE)
+        val editor = sharedPref?.edit()
+
+        // firebase activation
+        //https://www.youtube.com/watch?v=rFTJTLdoGDY&list=PLHQRWugvckFry9Q1OT6hLNfyUizT73PwX&index=2
+        try
+        {
+            val user = hashMapOf(
+                "username" to userName,
+                "mobileNo" to mobileNo,
+                "numberOfCoconuts" to numberOfCoconuts,
+                "numberOfSessions" to numberOfSessions,
+                "location" to location,
+                "role" to role,
+                "status" to "profile saved again when internet turned on",
+                "command" to "no commands"
+            )
+
+            // Add a new document with a generated ID
+            val documentName = userName.replace(" ","").replace(".","")+ "Data"
+            db.collection("users").document(documentName)
+                .set(user)
+                .addOnSuccessListener {
+//                    Toast.makeText(activity, "firebase profile data updated", Toast.LENGTH_SHORT).show()
+                    println("<-------------database updated ------------->")
+                    Log.d(TAG, "DocumentSnapshot added with ID:$documentName")
+
+                    // updating db status
+                    editor?.apply {
+                        putBoolean("profileDb",true)
+                        apply()
+                    }
+                }
+                .addOnFailureListener { e ->
+                    println("********************************************************")
+                    Log.w(TAG, "failed adding profile document to firebase", e)
+
+                    // updating db status
+                    editor?.apply {
+                        putBoolean("profileDb",false)
+                        apply()
+                    }
+                }
+        }
+        catch (e:Exception)
+        {
+            println("error in HomeFragment/saveProfileDataToFirebase(): failed to save profile to firebase ")
+            e.printStackTrace()
+            val errorString = "\n error in HomeFragment/saveProfileDataToFirebase(): failed to save  to firebase   \n${e.message}"
+            saveErrorsInTextToStorage(errorString)
+
+            // updating db status
+            editor?.apply {
+                putBoolean("profileDb",false)
+                apply()
+            }
+        }
+
+
+    }
+
+
+    // command related functions
+    private  fun getCommandFromProfileJson(): String {
+        var command1 = "getCommandFromProfileJson"
+        try
+        {
+            val filepath = "OneRootFiles"
+            val fileName = "profile.json"
+            val filePath = context?.getExternalFilesDir(filepath)
+            val myExternalFile = File(filePath, fileName)
+
+            println("updating command in profile.json")
+
+            fun isExternalStorageWritable(): Boolean {
+                val state = Environment.getExternalStorageState()
+                return Environment.MEDIA_MOUNTED == state
+            }
+
+            if (isExternalStorageWritable()) {
+                // get json object from path
+                val jsonObject = JSONObject(myExternalFile.readText())
+                command1 = jsonObject.getString("command")
+
+                // Toast.makeText(activity, "profile json data stored on registration", Toast.LENGTH_SHORT).show()
+                println("<--- command in profile.json: $command1")
+
+            }
+            else
+            {
+                Toast.makeText(
+                    activity,
+                    "External storage not available for getting command in profile json",
+                    Toast.LENGTH_SHORT
+                ).show()
+                println("External storage not available for getting command in profile.json file")
+            }
+
+        }
+        catch (e: Exception)
+        {
+            println("error in HomeFragment/getCommandFromProfileJson(): getting command from profile.json ")
+            e.printStackTrace()
+            val errorString = "\n error in HomeFragment/getCommandFromProfileJson(): getting command from  profile.json. \n${e.message}"
+            saveErrorsInTextToStorage(errorString)
+            command1 = "error getCommandFromFireBase"
+        }
+        return command1
+    }
+    private fun getCommandFromFireBase(): String {
+        var command2 = "getCommandFromFireBase"
+        try
+        {
+            val documentName = userName.replace(" ", "").replace(".", "") + "Data"
+
+            // Get the document
+            val documentReference = db.collection("users").document(documentName)
+            documentReference.get().addOnSuccessListener { documentSnapshot ->
+                // Get the field value
+                command2 = documentSnapshot.get("command").toString()
+
+                // Do something with the field value
+                println("command successfully obtained: $command2")
+
+                // updating profile.json
+                println("updating command in profile.json when offline")
+
+                // updating only command in profile.json instead of updating everything
+                updateCommandInProfileJson(command2)
+
+
+            }.addOnFailureListener {
+                    e -> Log.w(TAG, "Error getCommandFromFireBase ", e)
+                // command = "failed to get command"
+            }
+
+        }
+        catch (e: Exception)
+        {
+            println("error in HomeFragment/getCommandFromFireBase(): getting command from firebase failed ")
+            e.printStackTrace()
+            val errorString = "\n error in HomeFragment/getCommandFromFireBase(): getting command from firebase failed. \n${e.message}"
+            saveErrorsInTextToStorage(errorString)
+            command2 = "error getCommandFromFireBase"
+        }
+        return command2
+
+    }
+    private  fun updateCommandInProfileJson(command3:String)
+    {
+        try
+        {
+            val filepath = "OneRootFiles"
+            val fileName = "profile.json"
+            val filePath = context?.getExternalFilesDir(filepath)
+            val myExternalFile = File(filePath, fileName)
+
+            println("updating command in profile.json")
+
+            fun isExternalStorageWritable(): Boolean {
+                val state = Environment.getExternalStorageState()
+                return Environment.MEDIA_MOUNTED == state
+            }
+
+            if (isExternalStorageWritable()) {
+                // get json object from path
+                val jsonObject = JSONObject(myExternalFile.readText())
+                val commandObject = jsonObject.getJSONObject("command")
+                commandObject.put("command", command3)
+                val fileWriter1 = FileWriter(myExternalFile)
+                fileWriter1.write(jsonObject.toString())
+                fileWriter1.close()
+
+                // Toast.makeText(activity, "profile json data stored on registration", Toast.LENGTH_SHORT).show()
+                println("<--- command in profile.json file updated")
+            } else {
+                Toast.makeText(
+                    activity,
+                    "External storage not available for writing command in profile json",
+                    Toast.LENGTH_SHORT
+                ).show()
+                println("External storage not available for updating command in profile.json file")
+            }
+        }
+        catch (e: Exception)
+        {
+            println("error in HomeFragment/updateCommandInProfileData(): failed to update command in profile.json ")
+            e.printStackTrace()
+            val errorString = "\n error in HomeFragment/updateCommandInProfileData(): failed to update command in profile.json \n${e.message}"
+            saveErrorsInTextToStorage(errorString)
+        }
+
+    }
+
+
+    // status related functions
+    private fun updateStatusToProfileJson(statusString1: String)
+    {
+        try
+        {
+            val filepath = "OneRootFiles"
+            val fileName = "profile.json"
+            val filePath = context?.getExternalFilesDir(filepath)
+            val myExternalFile = File(filePath, fileName)
+
+            println("updating status in profile.json")
+
+            fun isExternalStorageWritable(): Boolean {
+                val state = Environment.getExternalStorageState()
+                return Environment.MEDIA_MOUNTED == state
+            }
+
+            if (isExternalStorageWritable()) {
+                // get json object from path
+                val jsonObject = JSONObject(myExternalFile.readText())
+                val statusObject = jsonObject.getJSONObject("status")
+                statusObject.put("status", statusString1)
+                val fileWriter1 = FileWriter(myExternalFile)
+                fileWriter1.write(jsonObject.toString())
+                fileWriter1.close()
+
+                // Toast.makeText(activity, "status in profile.json file updated", Toast.LENGTH_SHORT).show()
+                println("<--- status in profile.json file updated")
+            }
+            else
+            {
+                Toast.makeText(
+                    activity,
+                    "External storage not available for writing status in profile json",
+                    Toast.LENGTH_SHORT
+                ).show()
+                println("External storage not available for updating status in profile.json file")
+            }
+
+        }
+        catch (e: Exception)
+        {
+            println("error in HomeFragment/updateStatusToProfileJson(): failed to update status to profile.json ")
+            e.printStackTrace()
+            val errorString = "\n error in HomeFragment/updateStatusToFirebase(): failed to update status to profile.json  \n${e.message}"
+            saveErrorsInTextToStorage(errorString)
+        }
+
+    }
+    private fun updateStatusToFirebase(statusText: String)
+    {
+        // https://saveyourtime.medium.com/firebase-cloud-firestore-add-set-update-delete-get-data-6da566513b1b
+        // https://firebase.google.com/docs/firestore/manage-data/add-data
+
+        // firestore update
+        // https://firebase.google.com/docs/firestore/manage-data/add-data
+        try
+        {
+            if (activity?.let { it1 -> checkForInternet(it1) } == true)
+            {
+                println("updating status to firebase: $statusText")
+                val documentName = userName.replace(" ", "").replace(".", "") + "Data"
+
+                db.collection("users").document(documentName).update("status", statusText)
+                    .addOnSuccessListener { Log.d(TAG, "StatusToFirebase successfully updated!") }
+                    .addOnFailureListener { e -> Log.w(TAG, "Error updateStatusToFirebase ", e) }
+            }
+            else
+            {
+                println("updating status to firebase failed please connect to internet")
+            }
+        }
+        catch (e: Exception)
+        {
+            println("error in HomeFragment/updateStatusToFirebase(): failed to update status to firebase ")
+            e.printStackTrace()
+            val errorString = "\n error in HomeFragment/updateStatusToFirebase(): failed to update status to firebase  \n${e.message}"
+            saveErrorsInTextToStorage(errorString)
+        }
+        // updating status in profile.json
+        updateStatusToProfileJson(statusText)
+    }
     // store session in firebase
     private fun storeSessionDataToFirebase()
     {
@@ -650,8 +922,10 @@ class HomeFragment : Fragment() {
         }
         catch (e: Exception)
         {
-            println("error in firebase database: firebase storing session data failed")
+            println("error in HomeFragment/storeSessionDataToFirebase(): failed to store session data to firebase ")
             e.printStackTrace()
+            val errorString = "\n error in HomeFragment/storeSessionDataToFirebase(): failed to store session data to firebase   \n${e.message}"
+            saveErrorsInTextToStorage(errorString)
 
             // update session status
             editor?.apply {
@@ -666,123 +940,19 @@ class HomeFragment : Fragment() {
 
     }
 
-    private fun updateStatusToFirebase(text: String) {
-        // https://saveyourtime.medium.com/firebase-cloud-firestore-add-set-update-delete-get-data-6da566513b1b
-        // https://firebase.google.com/docs/firestore/manage-data/add-data
 
-        if (activity?.let { it1 -> checkForInternet(it1) } == true)
-        {
-            println("updating status to firebase: $text")
-            // firestore update
-            // https://firebase.google.com/docs/firestore/manage-data/add-data
+//    private fun restartActivity() {
+//        super.onDestroy()
+//        val i = Intent(activity, MainActivity::class.java)
+//        activity?.finish()
+//        activity?.overridePendingTransition(0, 0)
+//        startActivity(i)
+//        activity?.overridePendingTransition(0, 0)
+//    }
 
-            val documentName = userName.replace(" ", "").replace(".", "") + "Data"
-
-            db.collection("users").document(documentName).update("status", text)
-                .addOnSuccessListener { Log.d(TAG, "StatusToFirebase successfully updated!") }
-                .addOnFailureListener { e -> Log.w(TAG, "Error updateStatusToFirebase ", e) }
-        }
-        else
-        {
-            println("updating status to firebase failed please connect to internet")
-        }
-    }
-
-    private fun startAppUninstallActivity(){
-        val intent = Intent(activity, AppUninstallActivity::class.java)
-        startActivity(intent)
-        println("home activity closed")
-        activity?.finish()
-    }
-
-    private fun startUploadToCloudActivity(){
-        val intent = Intent(activity, UploadToCloudActivity::class.java)
-        startActivity(intent)
-        println("home activity closed")
-        activity?.finish()
-    }
-
-    private  fun updateProfileDataToStorage()
-    {
-        val filepath = "OneRootFiles"
-        val fileName  = "profile.json"
-        println("storing json data on registration")
-
-        fun isExternalStorageWritable(): Boolean {
-            val state = Environment.getExternalStorageState()
-            return Environment.MEDIA_MOUNTED == state
-        }
-
-        fun saveToExternalStorage(jsonData:String) {
-            val filePath = context?.getExternalFilesDir(filepath)
-            val myExternalFile = File(filePath, fileName)
-            try {
-                val fileOutputStream = FileOutputStream(myExternalFile)
-                fileOutputStream.write(jsonData.toByteArray())
-                fileOutputStream.close()
-                println("file saved in $myExternalFile")
-
-            } catch (e: IOException) {
-                e.printStackTrace()
-                println("exception in save to external storage")
-            }
-        }
-
-        // profile data created and saved in folder
-        val profileJson = JsonObject()
-        try {
-            profileJson.addProperty("username", userName)
-            profileJson.addProperty("mobileNo", mobileNo)
-            profileJson.addProperty("numberOfCoconuts", numberOfCoconuts)
-            profileJson.addProperty("numberOfSessions", numberOfSessions)
-            profileJson.addProperty("location", location)
-            profileJson.addProperty("role",role)
-            profileJson.addProperty("status", status)
-            profileJson.addProperty("command",command)
-
-            // converting json object to json string
-            val gson = Gson()
-            val jsonString = gson.toJson(profileJson)
-            if (isExternalStorageWritable()) {
-                saveToExternalStorage(jsonString)
-                Toast.makeText(activity, "profile json data stored on registration", Toast.LENGTH_SHORT).show()
-                println("<--- profile.json file stored successfully ")
-            }
-            else
-            {
-                Toast.makeText(activity, "External storage not available for writing profile json on registration", Toast.LENGTH_SHORT).show()
-                println("External storage not available for storing profile.json file")
-            }
-        }
-        catch (e: JSONException) {
-            println("error in register fragment: json file cant be saved")
-            e.printStackTrace()
-        }
-    }
-
-    private fun getCommandFromFireBase() {
-        val documentName = userName.replace(" ", "").replace(".", "") + "Data"
-
-        // Get the document
-        val documentReference = db.collection("users").document(documentName)
-        documentReference.get().addOnSuccessListener { documentSnapshot ->
-            // Get the field value
-            command = documentSnapshot.get("command").toString()
-
-            // Do something with the field value
-            println("command successfully obtained: $command")
-
-            // updating profile.json
-            println("updating command in profile.json when offline")
-            updateProfileDataToStorage()
-
-
-        }.addOnFailureListener {
-                e -> Log.w(TAG, "Error getCommandFromFireBase ", e)
-            // command = "failed to get command"
-        }
-    }
-
-    // TODO store command and status in Storage when device was offline
+//    private fun returnFragmentBack() {
+//        activity?.supportFragmentManager?.popBackStack()
+//
+//    }
 
 }
