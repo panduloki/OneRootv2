@@ -55,6 +55,11 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         val sharedPref = getSharedPreferences("myPref", Context.MODE_PRIVATE)
         val editor = sharedPref?.edit()
 
+        editor?.apply {
+            putBoolean("commandUpdate", true)
+            apply() //asynchronously
+        }
+
         // get sharedPref values
         val registrationDone = sharedPref.getBoolean("registered", false)
         val autoSignInDone = sharedPref.getBoolean("autoSignIn",false)

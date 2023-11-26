@@ -70,17 +70,17 @@ class HomeFragment : Fragment() {
         // reading profile.json from storage
         readProfileFromStorage()
 
-        val sharedPref = this.activity?.getSharedPreferences("myPref", Context.MODE_PRIVATE)
+        val sharedPref = activity?.getSharedPreferences("myPref", Context.MODE_PRIVATE)
         val editor = sharedPref?.edit()
         val sessionStatus = sharedPref?.getInt("session",5)
 
         // check for profile status updated or not
         val profileStoredInDb = sharedPref?.getBoolean("profileDb",true)
         val sessionStoredInDb = sharedPref?.getBoolean("sessionDb",true)
-
+        val commandNotUpdated = sharedPref?.getBoolean("commandUpdate",true)
 
         // check internet for getting command from firebase
-        if ( activity?.let { checkForInternet(it) } == true) {
+        if (( activity?.let { checkForInternet(it) } == true)&&(commandNotUpdated!!)) {
             //Toast.makeText(activity, "internet available", Toast.LENGTH_SHORT).show()
             // get CommandFrom Firebase else get command from profile.json when offline
             command = getCommandFromFireBase()
@@ -624,7 +624,7 @@ class HomeFragment : Fragment() {
             val filePath = context?.getExternalFilesDir(filepath)
             val myExternalFile = File(filePath, fileName)
 
-            println("updating command in profile.json")
+            println("getting command in profile.json")
 
             fun isExternalStorageWritable(): Boolean {
                 val state = Environment.getExternalStorageState()
@@ -678,9 +678,18 @@ class HomeFragment : Fragment() {
                 // updating only command in profile.json instead of updating everything
                 updateCommandInProfileJson(command2)
 
+                // put command updated
+                //shared preferences
+                val sharedPref = activity?.getSharedPreferences("myPref", Context.MODE_PRIVATE)
+                val editor = sharedPref?.edit()
+
+                editor?.apply {
+                    putBoolean("commandUpdate", false)
+                    apply() //asynchronously
+                }
 
                 // updating profile.json
-                println("updating command in profile.json when offline")
+                println("command from firebase updated to profile.json")
             }.addOnFailureListener {
                     e -> Log.w(TAG, "Error getCommandFromFireBase ", e)
                  command2 = "failed to get command From FireBase"
