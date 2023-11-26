@@ -6,7 +6,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.graphics.*
-//import android.hardware.camera2.CameraAccessException
+import android.hardware.camera2.CameraAccessException
 import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraManager
@@ -48,6 +48,7 @@ import java.io.File
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.io.FileReader
+import java.io.FileWriter
 import java.io.IOException
 import java.text.DateFormat
 import java.text.DateFormat.getDateInstance
@@ -121,7 +122,7 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
     private var no = 0
 
 //    private var flashLightStatus = true
-//    private lateinit var flashLightButton: ImageButton
+//    private late init var flashLightButton: ImageButton
 
     @SuppressLint("SimpleDateFormat")
     private fun getTime(): String {
@@ -684,7 +685,9 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
 
     @SuppressLint("MissingPermission")
     private fun openCamera(){
-        cameraManager.openCamera(cameraManager.cameraIdList[0], object:CameraDevice.StateCallback(){
+        try
+        {
+            cameraManager.openCamera(cameraManager.cameraIdList[0], object:CameraDevice.StateCallback(){
             override fun onOpened(p0: CameraDevice) {
                 cameraDevice = p0
 
@@ -714,6 +717,14 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
                 println("error: camera error")
             }
         }, handler)
+        }
+        catch (e: CameraAccessException) {
+            println("error in videoActivity/ openCamera(): camera exception ")
+            e.printStackTrace()
+            val errorString = "\n error in videoActivity/ openCamera(): camera exception  \n${e.message}"
+            saveErrorsInTextToStorage(errorString)
+        }
+
     }
 
     private fun detection(mutable:Bitmap): Bitmap {
@@ -947,14 +958,13 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
             // val numberOfDetections = outputs.numberOfDetectionsAsTensorBuffer.floatArray
             return drawDetectionRectangles(mutable,locations,scores)
         }
-        catch (e: JSONException) {
-            println("error in video activity/ auto detection: problem in detection method")
-            println(e)
+        catch (e: Exception) {
+            println("error in videoActivity/detection(): problem in tensorflow detection")
             e.printStackTrace()
+            val errorString = "\n error in videoActivity/detection(): problem in tensorflow detection \n${e.message}"
+            saveErrorsInTextToStorage(errorString)
             return mutable
         }
-
-
     }
 
     private fun manualDetection(mutable5:Bitmap): Bitmap {
@@ -1092,43 +1102,52 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
             // println("manual detection was  completed sending best image")
             return drawManualDetectionRectangles(mutable5,locations,scores)
         }
-        catch (e: JSONException) {
-            println("error in video activity/ auto detection: problem in detection method")
-            println(e)
+        catch (e: Exception) {
+            println("error in videoActivity/manualDetection(): problem in tensorflow  manual detection")
             e.printStackTrace()
+            val errorString = "\n error in videoActivity/manualDetection(): problem in tensorflow manual detection \n${e.message}"
+            saveErrorsInTextToStorage(errorString)
             return mutable5
         }
     }
 
     private fun storeBitmap(bitmap: Bitmap, filename:String, folderName:String){
-        //https://github.com/himanshuGaur684/Scope_Storage_PG/blob/scope_storage_images/app/src/main/java/com/gaur/flowoperator/MainActivity.kt
-        val contentResolver = this.contentResolver
-        val imageCollection = if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.Q){
-            MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-        }else{
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-        }
-        val contentValues = ContentValues().apply {
-            put(MediaStore.Images.Media.DISPLAY_NAME,"${filename}.jpg")
-            put(MediaStore.Images.Media.MIME_TYPE,"image/jpeg")
-            if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.Q){
-                put(MediaStore.Images.Media.IS_PENDING,1)
-                // save your file to a specific location ( use this below comment line )
-                put(MediaStore.Images.Media.RELATIVE_PATH,"DCIM/one_root_images/$folderName")
+        try {
+            //https://github.com/himanshuGaur684/Scope_Storage_PG/blob/scope_storage_images/app/src/main/java/com/gaur/flowoperator/MainActivity.kt
+            val contentResolver = this.contentResolver
+            val imageCollection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+            } else {
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI
             }
-        }
+            val contentValues = ContentValues().apply {
+                put(MediaStore.Images.Media.DISPLAY_NAME, "${filename}.jpg")
+                put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    put(MediaStore.Images.Media.IS_PENDING, 1)
+                    // save your file to a specific location ( use this below comment line )
+                    put(MediaStore.Images.Media.RELATIVE_PATH, "DCIM/one_root_images/$folderName")
+                }
+            }
 
-        val imageUri = contentResolver.insert(imageCollection,contentValues)
-        imageUri?.let {
-            val outputStream = contentResolver.openOutputStream(it)
-            bitmap.compress(Bitmap.CompressFormat.JPEG,90,outputStream)
-            outputStream?.close()
-            contentValues.clear()
-            if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.Q){
-                contentValues.put(MediaStore.Images.Media.IS_PENDING,0)
+            val imageUri = contentResolver.insert(imageCollection, contentValues)
+            imageUri?.let {
+                val outputStream = contentResolver.openOutputStream(it)
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 90, outputStream)
+                outputStream?.close()
+                contentValues.clear()
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    contentValues.put(MediaStore.Images.Media.IS_PENDING, 0)
+                }
+                contentResolver.update(it, contentValues, null, null)
+                outputStream?.close()
             }
-            contentResolver.update(it,contentValues,null,null)
-            outputStream?.close()
+        }
+        catch (e: Exception) {
+            println("error in video activity/storeBitmap(): bitmap file cant be stored")
+            e.printStackTrace()
+            val errorString = "\n error in video activity/storeBitmap(): bitmap file cant be stored. \n${e.message}"
+            saveErrorsInTextToStorage(errorString)
         }
 
     }
@@ -1230,8 +1249,10 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
             }
         }
         catch (e: JSONException) {
-            println("error in video activity: json file cant be saved")
+            println("error in video activity/storeSessionDataToFolder(): session json file cant be stored")
             e.printStackTrace()
+            val errorString = "\n error in video activity/storeSessionDataToFolder(): session json file cant be stored. \n${e.message}"
+            saveErrorsInTextToStorage(errorString)
         }
         finally {
             println("session json data stored to folder successfully")
@@ -1295,10 +1316,11 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
                 Toast.makeText(this, "External storage not available for writing detection json on video activity", Toast.LENGTH_SHORT).show()
             }
         }
-        catch (e: JSONException)
-        {
-            println("error in video activity: paused detection json file cant be saved")
+        catch (e: JSONException) {
+            println("error in video activity/storePausedDetectionsToFolder(): paused detection json file cant be stored")
             e.printStackTrace()
+            val errorString = "\n error in video activity/storePausedDetectionsToFolder(): paused detection json file cant be stored. \n${e.message}"
+            saveErrorsInTextToStorage(errorString)
         }
         finally
         {
@@ -1354,10 +1376,11 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
                 Toast.makeText(this, "External storage not available for deleting paused detection json on video activity", Toast.LENGTH_SHORT).show()
             }
         }
-        catch (e: JSONException)
-        {
-            println("error in video activity: paused detection json file cant be deleted")
+        catch (e: JSONException) {
+            println("error in video activity/deletePausedDetection(): paused detection json file cant be deleted")
             e.printStackTrace()
+            val errorString = "\n error in video activity/deletePausedDetection(): paused detection json file cant be deleted. \n${e.message}"
+            saveErrorsInTextToStorage(errorString)
         }
         finally
         {
@@ -1366,79 +1389,87 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
     }
 
     private fun readPauseDetection(): MutableList<Int> {
-        val filepath = "OneRootFiles"
-        val fileName = "PausedDetection.json"
-        println("retrieving paused detection json data on video activity")
-        val myExternalFile = File(this.getExternalFilesDir(filepath), fileName)
+        try{
+            val filepath = "OneRootFiles"
+            val fileName = "PausedDetection.json"
+            println("retrieving paused detection json data on video activity")
+            val myExternalFile = File(this.getExternalFilesDir(filepath), fileName)
 
-        // create empty list
-        val  mutableList = mutableListOf<Int>()
+            // create empty list
+            val  mutableList = mutableListOf<Int>()
 
-        fun convertToList(jsonString: String): MutableList<Int> {
-            val jsonString1 = jsonString.replace("[","")
-            val jsonString2 = jsonString1.replace("]","")
-            val jsonString3 = jsonString2.replace(" ","")
-            val charList: List<String> =  jsonString3.split(",")
-            println("charList $charList")
+            fun convertToList(jsonString: String): MutableList<Int> {
+                val jsonString1 = jsonString.replace("[","")
+                val jsonString2 = jsonString1.replace("]","")
+                val jsonString3 = jsonString2.replace(" ","")
+                val charList: List<String> =  jsonString3.split(",")
+                println("charList $charList")
 
-            for (eachChar in charList)
-            {
-                //println(eachChar.toInt())
-                if (eachChar!="")
+                for (eachChar in charList)
                 {
-                    mutableList.add(eachChar.toInt())
-                }
-            }
-            return mutableList
-        }
-
-        fun isExternalStorageReadable(): Boolean {
-            val state = Environment.getExternalStorageState()
-            return Environment.MEDIA_MOUNTED == state || Environment.MEDIA_MOUNTED_READ_ONLY == state
-        }
-
-        fun readFromExternalStorage(): String {
-            try {
-                val stringBuilder = StringBuilder()
-                try {
-                    val fileReader = FileReader(myExternalFile)
-                    val bufferedReader = BufferedReader(fileReader)
-                    var line: String?
-                    while (bufferedReader.readLine().also { line = it } != null) {
-                        stringBuilder.append(line)
+                    //println(eachChar.toInt())
+                    if (eachChar!="")
+                    {
+                        mutableList.add(eachChar.toInt())
                     }
-                    bufferedReader.close()
-                } catch (e: FileNotFoundException) {
-                    e.printStackTrace()
-                } catch (e: IOException) {
+                }
+                return mutableList
+            }
+
+            fun isExternalStorageReadable(): Boolean {
+                val state = Environment.getExternalStorageState()
+                return Environment.MEDIA_MOUNTED == state || Environment.MEDIA_MOUNTED_READ_ONLY == state
+            }
+
+            fun readFromExternalStorage(): String {
+                try {
+                    val stringBuilder = StringBuilder()
+                    try {
+                        val fileReader = FileReader(myExternalFile)
+                        val bufferedReader = BufferedReader(fileReader)
+                        var line: String?
+                        while (bufferedReader.readLine().also { line = it } != null) {
+                            stringBuilder.append(line)
+                        }
+                        bufferedReader.close()
+                    } catch (e: FileNotFoundException) {
+                        e.printStackTrace()
+                    } catch (e: IOException) {
+                        e.printStackTrace()
+                    }
+                    return stringBuilder.toString()
+
+                } catch (e: JSONException) {
+                    println("error in video activity: json file cant be read from external storage")
                     e.printStackTrace()
                 }
-                return stringBuilder.toString()
-
-            } catch (e: JSONException) {
-                println("error in video activity: json file cant be read from external storage")
-                e.printStackTrace()
+                return String()
             }
-            return String()
+            if (myExternalFile.exists() and isExternalStorageReadable()) {
+                println("reading pause Detection")
+                val dataFromJson = readFromExternalStorage()
+                println(" json data:  $dataFromJson")
+                val jsonObject = JSONObject(dataFromJson)
+                val detectionList = jsonObject.getString("PauseDetectionData")
+                println("<---------------------------------------->")
+                println("paused detectionList :$detectionList")
+                println("<---------------------------------------->")
+                // Add each element of the string list to the mutable int list
+                return  convertToList(detectionList)
+            }
+            else
+            {
+                println("Error: no session json file exists returning empty json array")
+                return mutableListOf()
+            }
         }
-        if (myExternalFile.exists() and isExternalStorageReadable()) {
-            println("reading pause Detection")
-            val dataFromJson = readFromExternalStorage()
-            println(" json data:  $dataFromJson")
-            val jsonObject = JSONObject(dataFromJson)
-            val detectionList = jsonObject.getString("PauseDetectionData")
-            println("<---------------------------------------->")
-            println("paused detectionList :$detectionList")
-            println("<---------------------------------------->")
-            // Add each element of the string list to the mutable int list
-            return  convertToList(detectionList)
-        }
-        else
-        {
-            println("Error: no session json file exists returning empty json array")
+        catch (e: Exception) {
+            println("error in videoActivity/readPauseDetection(): pausedDetection.json file cant be read")
+            e.printStackTrace()
+            val errorString = "\n error in videoActivity/readPauseDetection(): pausedDetection.json file cant be read. \n${e.message}"
+            saveErrorsInTextToStorage(errorString)
             return mutableListOf()
         }
-
     }
 
     // store session in firebase
@@ -1533,9 +1564,8 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
                     }
                 }
         }
-        catch (e: Exception)
-        {
-            println("error in firebase database: firebase storing session data failed")
+        catch (e: Exception) {
+            println("error in videoActivity/storeSessionDataToFirebase(): firebase storing session data failed")
             e.printStackTrace()
 
             // update session status
@@ -1543,7 +1573,12 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
                 putBoolean("sessionDb",false)
                 apply() //asynchronously
             }
+
+            val errorString = "\n error in videoActivity/storeSessionDataToFirebase(): firebase storing session data failed \n${e.message}"
+            saveErrorsInTextToStorage(errorString)
         }
+
+
         finally
         {
             println("session data stored successfully in database")
@@ -1624,9 +1659,10 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
             }
         }
         catch (e: JSONException) {
-            println("error in profile fragment: json file cant be read")
-            println(e)
+            println("error in videoActivity/readProfileFromStorage(): profile.json file cant be read")
             e.printStackTrace()
+            val errorString = "\n error in videoActivity/readProfileFromStorage(): profile.json file cant be read. \n${e.message}"
+            saveErrorsInTextToStorage(errorString)
         }
         finally {
             println("profile data read from folder successfully")
@@ -1676,7 +1712,7 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
             val jsonString = gson.toJson(profileJson)
             if (isExternalStorageWritable()) {
                 saveToExternalStorage(jsonString)
-                Toast.makeText(this, "profile json data stored on registration", Toast.LENGTH_SHORT).show()
+                // Toast.makeText(this, "profile json data stored on registration", Toast.LENGTH_SHORT).show()
                 println("<--- profile.json file stored successfully ")
             }
             else
@@ -1686,9 +1722,65 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
             }
         }
         catch (e: JSONException) {
-            println("error in register fragment: json file cant be saved")
+            println("error in videoActivity/updateProfileFromStorage(): profile.json file cant be read")
+            e.printStackTrace()
+            val errorString = "\n error in videoActivity/updateProfileFromStorage(): profile.json file cant be read \n${e.message}"
+            saveErrorsInTextToStorage(errorString)
+        }
+
+    }
+
+    private fun saveErrorsInTextToStorage(errorString: String)
+    {
+        val textFilePath = "OneRootFiles"
+        val fileName  = "errors.txt"
+        println("errors raised storing errors in txt file")
+        val filePath = this.getExternalFilesDir(textFilePath)
+        val myExternalFile = File(filePath, fileName)
+
+        fun isExternalStorageWritable(): Boolean {
+            val state = Environment.getExternalStorageState()
+            return Environment.MEDIA_MOUNTED == state
+        }
+
+        try
+        {
+            if (isExternalStorageWritable())
+            {
+                if (myExternalFile.exists())
+                {
+                    println("errors.txt file exists read line from it and update")
+                    val fileReader = BufferedReader(FileReader(myExternalFile))
+                    val text = fileReader.readText()
+                    fileReader.close()
+
+                    val newText = "$text\n<--------------------------->\n$errorString\n"
+                    val fileWriter = FileWriter(myExternalFile)
+                    fileWriter.write(newText)
+                    fileWriter.close()
+                }
+                else
+                {
+                    println("errors.txt file does not exist make a new file and update")
+                    val fileWriter = FileWriter(myExternalFile)
+                    fileWriter.write("$errorString\n")
+                    fileWriter.close()
+                }
+                // Toast.makeText(this, "errors are stored in text file", Toast.LENGTH_SHORT).show()
+                println("<---errors.txt file stored successfully ")
+            }
+            else
+            {
+                Toast.makeText(this, "External storage not available for writing errors.txt", Toast.LENGTH_SHORT).show()
+                println("External storage not available for storing errors.txt file")
+            }
+        }
+        catch (e: Exception) {
+            println("error in videoActivity/saveErrorsInTextToStorage() : errors.txt cant be saved")
             e.printStackTrace()
         }
+
+
 
     }
 
@@ -1726,24 +1818,35 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
     // creating database
     private val db = Firebase.firestore
     private fun updateStatusToFirebase(text: String) {
-        readProfileFromStorage()
-        // https://saveyourtime.medium.com/firebase-cloud-firestore-add-set-update-delete-get-data-6da566513b1b
-        // https://firebase.google.com/docs/firestore/manage-data/add-data
-        if (checkForInternet(this))
+        try
         {
-            println("updating status to firebase: $text")
-            // firestore update
+            readProfileFromStorage()
+            // https://saveyourtime.medium.com/firebase-cloud-firestore-add-set-update-delete-get-data-6da566513b1b
             // https://firebase.google.com/docs/firestore/manage-data/add-data
-            val documentName = userName.replace(" ", "").replace(".", "") + "Data"
-            println ("<-------- document name: $documentName")
-            db.collection("users").document(documentName).update("status", text)
-                .addOnSuccessListener { Log.d(MainActivity.TAG, "StatusToFirebase successfully updated!") }
-                .addOnFailureListener { e -> Log.w(MainActivity.TAG, "Error updateStatusToFirebase ", e) }
+            if (checkForInternet(this))
+            {
+                println("updating status to firebase: $text")
+                // firestore update
+                // https://firebase.google.com/docs/firestore/manage-data/add-data
+                val documentName = userName.replace(" ", "").replace(".", "") + "Data"
+                println ("<-------- document name: $documentName")
+                db.collection("users").document(documentName).update("status", text)
+                    .addOnSuccessListener { Log.d(MainActivity.TAG, "StatusToFirebase successfully updated!") }
+                    .addOnFailureListener { e -> Log.w(MainActivity.TAG, "Error updateStatusToFirebase ", e) }
+            }
+            else
+            {
+                println("updating status to firebase failed please connect to internet")
+            }
         }
-        else
-        {
-            println("updating status to firebase failed please connect to internet")
+        catch (e: Exception) {
+            println("error in videoActivity/updateStatusToFirebase(): firebase storing user status data failed ")
+            e.printStackTrace()
+            val errorString = "\n error in videoActivity/updateStatusToFirebase(): firebase storing user status data failed \n${e.message}"
+            saveErrorsInTextToStorage(errorString)
         }
+
+
     }
 
     // flash light
