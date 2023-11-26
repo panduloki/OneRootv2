@@ -114,5 +114,6 @@
     <string name="upload_button_text">upload\n to\n cloud\n</string>
     <string name="uploadingImagesText">Uploading images:</string>
     <string name="progressText">0/0</string>
+    <string name="drop_down_text">TEXT</string>
 
 </resources>
