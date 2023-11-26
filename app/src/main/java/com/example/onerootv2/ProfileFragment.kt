@@ -19,6 +19,7 @@ import java.io.BufferedReader
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.FileReader
+import java.io.FileWriter
 import java.io.IOException
 
 private var userName = ""
@@ -116,6 +117,59 @@ class ProfileFragment : Fragment() {
         startActivity(i)
     }
 
+    private fun saveErrorsInTextToStorage(errorString: String)
+    {
+        val textFilePath = "OneRootFiles"
+        val fileName  = "errors.txt"
+        println("errors raised storing errors in txt file")
+        val filePath = activity?.getExternalFilesDir(textFilePath)
+        val myExternalFile = File(filePath, fileName)
+
+        fun isExternalStorageWritable(): Boolean {
+            val state = Environment.getExternalStorageState()
+            return Environment.MEDIA_MOUNTED == state
+        }
+
+        try
+        {
+            if (isExternalStorageWritable())
+            {
+                if (myExternalFile.exists())
+                {
+                    println("errors.txt file exists read line from it and update")
+                    val fileReader = BufferedReader(FileReader(myExternalFile))
+                    val text = fileReader.readText()
+                    fileReader.close()
+
+                    val newText = "$text\n<--------------------------->\n$errorString\n"
+                    val fileWriter = FileWriter(myExternalFile)
+                    fileWriter.write(newText)
+                    fileWriter.close()
+                }
+                else
+                {
+                    println("errors.txt file does not exist make a new file and update")
+                    val fileWriter = FileWriter(myExternalFile)
+                    fileWriter.write("$errorString\n")
+                    fileWriter.close()
+                }
+                // Toast.makeText(this, "errors are stored in text file", Toast.LENGTH_SHORT).show()
+                println("<---errors.txt file stored successfully ")
+            }
+            else
+            {
+                Toast.makeText(activity, "External storage not available for writing errors.txt", Toast.LENGTH_SHORT).show()
+                println("External storage not available for storing errors.txt file")
+            }
+        }
+        catch (e: Exception) {
+            println("error in videoActivity/saveErrorsInTextToStorage() : errors.txt cant be saved")
+            e.printStackTrace()
+        }
+
+
+
+    }
     private fun readProfileFromStorage()
     {
         // https://www.youtube.com/watch?v=JUlZYddw03o
@@ -175,10 +229,12 @@ class ProfileFragment : Fragment() {
                 ).show()
             }
         }
-        catch (e: JSONException) {
-            println("error in profile fragment: profile.json file cant be read")
-            println(e)
+        catch (e: JSONException)
+        {
+            println("error in profileFragment/readProfileFromStorage(): failed to read profile.json ")
             e.printStackTrace()
+            val errorString = "\n error in profileFragment/readProfileFromStorage(): failed to read profile.json \n${e.message}"
+            saveErrorsInTextToStorage(errorString)
         }
         finally {
             println("profile data read from folder successfully")
@@ -245,11 +301,13 @@ class ProfileFragment : Fragment() {
                 ).show()
             }
         }
-        catch (e: JSONException) {
+        catch (e: JSONException)
+        {
             sessionDataReadable = false
-            println("error in profile fragment: session.json file cant be read")
-            println(e)
+            println("error in profileFragment/readSessionFromStorage(): failed to read session.json ")
             e.printStackTrace()
+            val errorString = "\n error in profileFragment/readSessionFromStorage(): failed to read session.json  \n${e.message}"
+            saveErrorsInTextToStorage(errorString)
         }
         finally {
             println("session data read from folder successfully")
