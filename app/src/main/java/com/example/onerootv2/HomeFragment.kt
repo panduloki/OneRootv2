@@ -80,12 +80,11 @@ class HomeFragment : Fragment() {
 
 
         // check internet for getting command from firebase
-        if (activity?.let { it1 -> checkForInternet(it1) } == true) {
-            Toast.makeText(activity, "internet available", Toast.LENGTH_SHORT).show()
+        if ( activity?.let { checkForInternet(it) } == true) {
+            //Toast.makeText(activity, "internet available", Toast.LENGTH_SHORT).show()
             // get CommandFrom Firebase else get command from profile.json when offline
             command = getCommandFromFireBase()
             println("----------------> command from firebase: $command")
-
         }
         else
         {
@@ -542,7 +541,7 @@ class HomeFragment : Fragment() {
 
             println("error in HomeFragment/readProfileFromStorage(): failed to read profile.json ")
             e.printStackTrace()
-            val errorString = "\n error in HomeFragment/readProfileFromStorage(): failed to read profile.json \n${e.message}"
+            val errorString = "\n error in HomeFragment/readProfileFromStorage(): failed to read profile.json \n${e.message} \n $e"
             saveErrorsInTextToStorage(errorString)
         }
         finally {
@@ -673,20 +672,21 @@ class HomeFragment : Fragment() {
             documentReference.get().addOnSuccessListener { documentSnapshot ->
                 // Get the field value
                 command2 = documentSnapshot.get("command").toString()
-
                 // Do something with the field value
                 println("command successfully obtained: $command2")
-
-                // updating profile.json
-                println("updating command in profile.json when offline")
 
                 // updating only command in profile.json instead of updating everything
                 updateCommandInProfileJson(command2)
 
 
+                // updating profile.json
+                println("updating command in profile.json when offline")
             }.addOnFailureListener {
                     e -> Log.w(TAG, "Error getCommandFromFireBase ", e)
-                // command = "failed to get command"
+                 command2 = "failed to get command From FireBase"
+
+                // updating only command in profile.json instead of updating everything
+                updateCommandInProfileJson(command2)
             }
 
         }
@@ -697,7 +697,11 @@ class HomeFragment : Fragment() {
             val errorString = "\n error in HomeFragment/getCommandFromFireBase(): getting command from firebase failed. \n${e.message}"
             saveErrorsInTextToStorage(errorString)
             command2 = "error getCommandFromFireBase"
+
+            // updating only command in profile.json instead of updating everything
+            updateCommandInProfileJson(command2)
         }
+
         return command2
 
     }
@@ -720,14 +724,14 @@ class HomeFragment : Fragment() {
             if (isExternalStorageWritable()) {
                 // get json object from path
                 val jsonObject = JSONObject(myExternalFile.readText())
-                val commandObject = jsonObject.getJSONObject("command")
-                commandObject.put("command", command3)
+                //val commandObject = jsonObject.getJSONObject("command")
+                jsonObject.put("command", command3)
                 val fileWriter1 = FileWriter(myExternalFile)
                 fileWriter1.write(jsonObject.toString())
                 fileWriter1.close()
 
                 // Toast.makeText(activity, "profile json data stored on registration", Toast.LENGTH_SHORT).show()
-                println("<--- command in profile.json file updated")
+                println("<--- command in profile.json file updated: $command3")
             } else {
                 Toast.makeText(
                     activity,
@@ -768,8 +772,8 @@ class HomeFragment : Fragment() {
             if (isExternalStorageWritable()) {
                 // get json object from path
                 val jsonObject = JSONObject(myExternalFile.readText())
-                val statusObject = jsonObject.getJSONObject("status")
-                statusObject.put("status", statusString1)
+//                val statusObject = jsonObject.getJSONObject("status")
+                jsonObject.put("status",statusString1)
                 val fileWriter1 = FileWriter(myExternalFile)
                 fileWriter1.write(jsonObject.toString())
                 fileWriter1.close()
