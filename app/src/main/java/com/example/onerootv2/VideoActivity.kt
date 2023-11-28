@@ -10,6 +10,7 @@ import android.hardware.camera2.CameraAccessException
 import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraManager
+import android.media.MediaPlayer
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
@@ -24,6 +25,7 @@ import android.view.Surface
 import android.view.TextureView
 import android.view.View
 import android.view.View.OnTouchListener
+import android.view.WindowManager
 import android.widget.Button
 //import android.widget.ImageButton
 import android.widget.ImageView
@@ -88,11 +90,13 @@ var arrowDistance = 0.0.toFloat()
 
 var minArrowDistance = 8
 var maxArrowDistance = 90
-var showBestPic = false
+var saveBestPic = false
 var bestPicSelected = false
 var bestPic: Bitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888)
 var best_count = 0
 
+// for playing sound
+private var mMediaPlayer: MediaPlayer? = null
 
 
 var captureButtonPressed = false
@@ -160,6 +164,10 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_video)
+
+        // prevents app to go to sleep
+        // https://stackoverflow.com/questions/3723634/how-do-i-prevent-an-android-device-from-going-to-sleep-programmatically
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         // getting shared preference
         val sharedPref = getSharedPreferences("myPref", Context.MODE_PRIVATE)
@@ -295,7 +303,7 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
                 }
 
                 // if Best picture selected
-                if (showBestPic)
+                if (saveBestPic)
                 {
                     // best results are stored
                     if ((bestPicSelected) and (best_count>0)) {
@@ -318,7 +326,7 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
                         storeBitmap(bestPic, fileName1, folderName1)
                         println("image: $fileName1 stored in file")
 
-                        showBestPic = false
+                        saveBestPic = false
                         bestPicSelected = false
                         //update count
                         present_session_coconut_count+= best_count
@@ -328,7 +336,7 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
                     }
                     else
                     {
-                        showBestPic = false
+                        saveBestPic = false
                     }
                 }
 
@@ -363,7 +371,7 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
                             MotionEvent.ACTION_UP -> {
                                 captureButtonPressed = false
                                 println(" capture Button released ")
-                                showBestPic = true
+                                saveBestPic = true
                                 return@OnTouchListener true
                             }
                         }
@@ -405,7 +413,7 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
 
                         // In auto detection mode coconut detections are enabled
 
-                        if (mutable2.isMutable) {
+                        if ((mutable2.isMutable)&&(mutable2!=null)) {
                             mutable2 = detection(mutable2)
                         }
 
@@ -487,10 +495,15 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
             }
         }
 
+        // clear media
+        if (mMediaPlayer != null) {
+            mMediaPlayer!!.release()
+            mMediaPlayer = null
+        }
+
         playNewSessionClicked = false
         stopButtonClicked = false
         pauseButtonClicked = true
-
         super.onDestroy()
         model.close()
         finish()
@@ -518,9 +531,9 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
                     playNewSessionClicked = false
                     pauseButtonClicked = false
 
-                    if (showBestPic)
+                    if (saveBestPic)
                     {
-                        showBestPic = false
+                        saveBestPic = false
                         bestPicSelected = false
                         playNewSessionClicked = true
                     }
@@ -616,9 +629,9 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
             }
 
             R.id.captureButton ->{
-                if (showBestPic)
+                if (saveBestPic)
                 {
-                    showBestPic = false
+                    saveBestPic = false
                     bestPicSelected = false
                 }
 
@@ -727,6 +740,41 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
 
     }
 
+    // 1. Plays the water sound
+    // https://codersguidebook.com/how-to-create-an-android-app/play-sounds-music-android-app
+    private fun playSound() {
+        println("-----> playing sound")
+        if (mMediaPlayer == null) {
+            mMediaPlayer = MediaPlayer.create(this, R.raw.beep)
+            mMediaPlayer!!.isLooping = true
+            mMediaPlayer!!.start()
+        } else mMediaPlayer!!.start()
+    }
+
+    // 2. Pause playback
+//    private fun pauseSound() {
+//        if (mMediaPlayer?.isPlaying == true) mMediaPlayer?.pause()
+//    }
+
+    // 3. Stops playback
+    private fun stopSound() {
+        println("-----> stop sound")
+        if (mMediaPlayer != null) {
+            mMediaPlayer!!.stop()
+            mMediaPlayer!!.release()
+            mMediaPlayer = null
+        }
+    }
+
+    // 4. Destroys the MediaPlayer instance when the app is closed
+    override fun onStop() {
+        super.onStop()
+        if (mMediaPlayer != null) {
+            mMediaPlayer!!.release()
+            mMediaPlayer = null
+        }
+    }
+
     private fun detection(mutable:Bitmap): Bitmap {
         try {
             // auto mode detection rectangle
@@ -734,10 +782,10 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
                 val h = mutable1.height
                 val w = mutable1.width
 
-                val xFactor = 250F
-                val yFactor = 400F
-                val xMax = (w-yFactor)
-                val yMax = (h-yFactor)
+//                val xFactor = 250F
+//                val yFactor = 400F
+//                val xMax = (w-yFactor)
+//                val yMax = (h-yFactor)
 
                 // <----------------------- drawing  detections --------------------------------------->
                 val canvas = Canvas(mutable1)
@@ -829,7 +877,7 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
                 paint.color = Color.RED
                 paint.style = Paint.Style.FILL
                 canvas.drawText(
-                    "session coconut count: $present_session_coconut_count",
+                    "session: $present_session_coconut_count",
                     (50).toFloat(), (250).toFloat(), paint
                 )
 
@@ -873,6 +921,7 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
                     println("arrow distance $arrowDistance")
                 }
 
+                // ******************  when to save image******************
                 // when to choose best image
                 if ((arrowDistance>0)&&(arrowDistance< minArrowDistance))
                 {
@@ -881,42 +930,47 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
                     bestPic = mutable1.copy(Bitmap.Config.ARGB_8888, true)
                 }
 
-                // ******************  when to save image******************
 
-                // paint rectangle to show contain box for coconut placement
-                paint.color = Color.BLACK
-                paint.style = Paint.Style.STROKE
-                canvas.drawRect(
-                    RectF(
-                        xFactor,
-                        xFactor,
-                        xMax,
-                        yMax
-                    ), paint
-                )
+                // paint blank rectangle to show contain box for coconut placement
+//                paint.color = Color.BLACK
+//                paint.style = Paint.Style.STROKE
+//                canvas.drawRect(
+//                    RectF(
+//                        xFactor,
+//                        yFactor,
+//                        xMax,
+//                        yMax
+//                    ), paint
+//                )
 
 
-                // when to save image
 
+
+                // if bunch center disappear
                 if (bunchCenterX.isNaN() or bunchCenterY.isNaN())
                 {
-                    showBestPic = true
+                    stopSound()
+                    saveBestPic = true
                 }
-                else if(((bunchCenterX < xFactor) or (bunchCenterY < xFactor))or((bunchCenterX>xMax)or(bunchCenterY>yMax)))
+                // elseif bunch center outside container box put black marker for bunch center
+//                else if(((bunchCenterX < xFactor) or (bunchCenterY < yFactor))or((bunchCenterX>xMax)or(bunchCenterY>yMax)))
+//                {
+//                    // draw bunch center
+//                    paint.color = Color.BLACK
+//                    paint.style = Paint.Style.FILL
+//                    canvas.drawCircle(bunchCenterX, bunchCenterY, 100f, paint )
+//
+//                    showBestPic = true
+//                    bestPicSelected = false
+//                }
+
+
+                if (arrowDistance> maxArrowDistance)
                 {
-                    // draw bunch center
-                    paint.color = Color.BLACK
-                    paint.style = Paint.Style.FILL
-                    canvas.drawCircle(bunchCenterX, bunchCenterY, 100f, paint )
-
-                    showBestPic = true
+                    stopSound()
+                    saveBestPic = true
+                    //println("best picture")
                 }
-
-//        if (arrowDistance> maxArrowDistance)
-//        {
-//            showBestPic = true
-//            //println("best picture")
-//        }
 
                 // print best pick selected or not
                 if(bestPicSelected)
@@ -929,6 +983,11 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
                         "remove coconut from box",
                         (50).toFloat(), (h*0.7).toFloat(), paint
                     )
+                    playSound()
+                }
+                else
+                {
+                    stopSound()
                 }
 
                 // println("locationsL $locationsL")
@@ -961,7 +1020,7 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
         catch (e: Exception) {
             println("error in videoActivity/detection(): problem in tensorflow detection")
             e.printStackTrace()
-            val errorString = "\n error in videoActivity/detection(): problem in tensorflow detection \n${e.message}"
+            val errorString = "\n error in videoActivity/detection(): problem in tensorflow detection \n${e.message} \n $e"
             saveErrorsInTextToStorage(errorString)
             return mutable
         }
@@ -1593,13 +1652,13 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
         this.finish()
     }
 
-    private fun saveImagesToCloud()
-    {
-        //TODO saving images to google cloud
-
-        // how to upload to cloud
-        // https://firebase.google.com/docs/storage/android/upload-files
-    }
+//    private fun saveImagesToCloud()
+//    {
+//        //TODO saving images to google cloud
+//
+//        // how to upload to cloud
+//        // https://firebase.google.com/docs/storage/android/upload-files
+//    }
 
     private fun readProfileFromStorage()
     {
