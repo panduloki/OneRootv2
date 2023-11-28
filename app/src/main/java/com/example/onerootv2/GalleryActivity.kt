@@ -16,7 +16,10 @@ import android.widget.GridView
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 
+// gridview images
+//https://www.youtube.com/watch?v=ysXd-CupSa0
 class GalleryActivity : AppCompatActivity() {
+    private var imageFolderPath = "/DCIM/one_root_images%"
     lateinit var rs:Cursor
     override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -27,7 +30,7 @@ class GalleryActivity : AppCompatActivity() {
     @SuppressLint("Recycle")
     private fun listImages(){
         val gridview: GridView = findViewById(R.id.gridview)
-        //https://www.youtube.com/watch?v=ysXd-CupSa0
+
         val cols = listOf(MediaStore.Images.Thumbnails.DATA).toTypedArray()
 //        rs = contentResolver.query(
 //            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
@@ -35,9 +38,14 @@ class GalleryActivity : AppCompatActivity() {
 //            null,
 //            null,
 //            null)!!
+
         // getting images from specified folder
-        rs = contentResolver.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cols, MediaStore.Images.Media.DATA + " like ?",
-            arrayOf("%" + Environment.getExternalStorageDirectory().absolutePath + "/DCIM/one_root_images%"), MediaStore.Images.ImageColumns.DATE_TAKEN + " DESC")!!
+        rs = contentResolver.query(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            cols,
+            MediaStore.Images.Media.DATA + " like ?",
+            arrayOf("%" + Environment.getExternalStorageDirectory().absolutePath + imageFolderPath),
+            MediaStore.Images.ImageColumns.DATE_TAKEN + " DESC")!!
 
         gridview.adapter =ImageAdaptor(applicationContext)
         gridview.setOnItemClickListener { parent, view, position, id ->
@@ -48,12 +56,7 @@ class GalleryActivity : AppCompatActivity() {
             startActivity(i)
         }
     }
-    inner class ImageAdaptor: BaseAdapter {
-        var context: Context
-        constructor(context: Context)
-        {
-            this.context = context
-        }
+    inner class ImageAdaptor(var context: Context) : BaseAdapter() {
         override fun getCount(): Int {
             return rs.count
         }
