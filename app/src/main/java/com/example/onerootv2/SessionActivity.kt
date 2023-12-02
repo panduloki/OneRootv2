@@ -77,9 +77,9 @@ class SessionActivity : AppCompatActivity() {
             }
 
 
-            val image_path1 = imagePaths[id2]
-            println("image loading from $image_path1")
-            val uri = Uri.fromFile(File(image_path1))
+            val imagePath1 = imagePaths[id2]
+            println("image loading from $imagePath1")
+            val uri = Uri.fromFile(File(imagePath1))
             // Set the image on the ImageView.
             sessionView.setImageURI(uri)
             sendImageToGoogleCloud(uri)
@@ -104,9 +104,9 @@ class SessionActivity : AppCompatActivity() {
             }
 
 
-            val image_path1 = imagePaths[id2]
-            println("image loading from $image_path1")
-            val uri = Uri.fromFile(File(image_path1))
+            val imagePath1 = imagePaths[id2]
+            println("image loading from $imagePath1")
+            val uri = Uri.fromFile(File(imagePath1))
             // Set the image on the ImageView.
             sessionView.setImageURI(uri)
             sendImageToGoogleCloud(uri)

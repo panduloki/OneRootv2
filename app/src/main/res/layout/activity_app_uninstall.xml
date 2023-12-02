@@ -13,7 +13,7 @@
         android:contentDescription="@string/background"
         android:minHeight="48dp"
         android:scaleType="centerCrop"
-        android:src="@drawable/b6"
+        android:src="@drawable/b2"
         tools:layout_editor_absoluteX="-38dp"
         tools:layout_editor_absoluteY="0dp" />
 

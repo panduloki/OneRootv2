@@ -73,7 +73,7 @@ class UploadToCloudActivity : AppCompatActivity() {
             uploadingText.text = "No internet"
             progressBar.visibility = View.GONE
             imageProgress.visibility = View.GONE
-            uploadView.background = getDrawable(R.drawable.b6)
+            uploadView.background = getDrawable(R.drawable.b2)
             Toast.makeText(this, "internet  not available", Toast.LENGTH_SHORT).show()
             // <------------------ alert box ----------------------------------->
             // https://www.digitalocean.com/community/tutorials/android-alert-dialog-using-kotlin
@@ -117,9 +117,9 @@ class UploadToCloudActivity : AppCompatActivity() {
         var imagePathname: String
         var cloudPathname: String
 
-        val gpath: String = Environment.getExternalStorageDirectory().absolutePath
-        val spath = "DCIM/one_root_images/"
-        val fullPath = gpath + File.separator + spath
+        val gPath: String = Environment.getExternalStorageDirectory().absolutePath
+        val sPath = "DCIM/one_root_images/"
+        val fullPath = gPath + File.separator + sPath
         println("getting paths from $fullPath")
         val files = File(fullPath).listFiles()
 

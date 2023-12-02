@@ -166,7 +166,7 @@
         android:id="@+id/locationButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="get location"
+        android:text="@string/get_location_text"
         android:textColor="@color/black"
         android:textColorHint="@color/black"
         app:layout_constraintBottom_toBottomOf="parent"
