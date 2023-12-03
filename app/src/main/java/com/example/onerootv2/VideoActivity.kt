@@ -321,10 +321,18 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
 
                         // save best pic in gallery
                         val fileName1 = "img$no"
-                        val folderName1 = "session$sessionNo"
-                        no+=1
+                        val folderName1 = "DCIM/one_root_images/session$sessionNo"
+
+                        // Store best pic in dcim folder
                         storeBitmap(bestPic, fileName1, folderName1)
                         println("image: $fileName1 stored in file")
+
+                        // store original image in folder
+                        val fileName2 = "orgImg$no"
+                        val folderName2 = "DCIM/one_root_original_images/session$sessionNo"
+                        storeBitmap(mutable2,fileName2,folderName2)
+
+                        no+=1
 
                         saveBestPic = false
                         bestPicSelected = false
@@ -333,6 +341,9 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
 
                         // store in detection list
                         detections.add(best_count)
+
+                        // * newly added store detections in paused detection every time since chances of crashes are more
+                        storePausedDetectionsToFolder()
                     }
                     else
                     {
@@ -1185,7 +1196,7 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     put(MediaStore.Images.Media.IS_PENDING, 1)
                     // save your file to a specific location ( use this below comment line )
-                    put(MediaStore.Images.Media.RELATIVE_PATH, "DCIM/one_root_images/$folderName")
+                    put(MediaStore.Images.Media.RELATIVE_PATH, folderName)
                 }
             }
 
@@ -1210,6 +1221,7 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
         }
 
     }
+
 
     // saving detection to folder
     private fun storeSessionDataToFolder()
@@ -1354,37 +1366,47 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
         // profile data created and saved in folder
         val sessionJsonData = JsonObject()
         try {
-            sessionJsonData.addProperty("sessionNo", sessionNo)
-            sessionJsonData.addProperty("sessionType", sessionType)
-            sessionJsonData.addProperty("PauseDetectionData",detections.toString())
-            sessionJsonData.addProperty("time",getTime())
-            sessionJsonData.addProperty("date",getDate())
+            if (detections.size>0)
+            {
+                sessionJsonData.addProperty("sessionNo", sessionNo)
+                sessionJsonData.addProperty("sessionType", sessionType)
+                sessionJsonData.addProperty("PauseDetectionData", detections.toString())
+                sessionJsonData.addProperty("time", getTime())
+                sessionJsonData.addProperty("date", getDate())
 
-            //printing updated json array data
-            println("paused detection data: $sessionJsonData")
-            println("---------------------")
-            // converting json object to json string
-            val jsonString = Gson().toJson(sessionJsonData)
+                //printing updated json array data
+                println("paused detection data: $sessionJsonData")
+                println("---------------------")
+                // converting json object to json string
+                val jsonString = Gson().toJson(sessionJsonData)
 
-            if (isExternalStorageWritable()) {
-                saveToExternalStorage(jsonString)
-                Toast.makeText(this, "paused detection json data stored on video activity", Toast.LENGTH_SHORT).show()
+                if (isExternalStorageWritable()) {
+                    saveToExternalStorage(jsonString)
+                    //Toast.makeText(this, "paused detection json data stored on video activity", Toast.LENGTH_SHORT).show()
+                    println("paused detection json data stored on video activity")
+                } else {
+                    Toast.makeText(
+                        this,
+                        "External storage not available for writing paused detection json on video activity",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             }
             else
             {
-                Toast.makeText(this, "External storage not available for writing detection json on video activity", Toast.LENGTH_SHORT).show()
+                println("coconut are not detected no need to save to paused detection json")
             }
         }
         catch (e: JSONException) {
             println("error in video activity/storePausedDetectionsToFolder(): paused detection json file cant be stored")
             e.printStackTrace()
-            val errorString = "\n error in video activity/storePausedDetectionsToFolder(): paused detection json file cant be stored. \n${e.message}"
+            val errorString = "\n error in video activity/storePausedDetectionsToFolder(): paused detection json file cant be stored. \n${e.message}\n${e}"
             saveErrorsInTextToStorage(errorString)
         }
-        finally
-        {
-            println("paused detection json data stored in storage")
-        }
+//        finally
+//        {
+//            println("paused detection json data stored in storage")
+//        }
     }
 
     private fun deletePausedDetection()
