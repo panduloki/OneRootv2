@@ -1,7 +1,6 @@
 package com.example.onerootv2
 
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.os.Environment
@@ -37,6 +36,8 @@ var sessionNo = 0
 var sessionUser = ""
 var sessionData = ""
 var detectionList = mutableListOf<Int>()
+
+var imageDirectoryPath = "/DCIM/one_root_images/session"
 class ProfileFragment : Fragment() {
     @SuppressLint("MissingInflatedId")
     override fun onCreateView(
@@ -106,9 +107,16 @@ class ProfileFragment : Fragment() {
     }
     private fun dispatchGalleryIntent()
     {
+
+        val bundle = Bundle()
+        imageDirectoryPath += (sessionNo-1)
+        bundle.putString("path", imageDirectoryPath)
         val i = Intent(activity, GalleryActivity::class.java)
+        i.putExtras(bundle)
         startActivity(i)
-        (activity as Activity?)!!.overridePendingTransition(0, 0)
+        imageDirectoryPath = "/DCIM/one_root_images/session"
+        bundle.clear()
+        // (activity as Activity?)!!.overridePendingTransition(0, 0)
     }
 
     private fun dispatchUploadActivity()
@@ -283,8 +291,9 @@ class ProfileFragment : Fragment() {
                 println(" json data:  $dataFromJson2")
                 // from json array get last json object
                 val jsonObjectArray = JSONArray(dataFromJson2)
+                // getting last json object
                 val jsonObject1 = jsonObjectArray.getJSONObject(jsonObjectArray.length()-1)
-//                sessionNo = jsonObject1.getInt("sessionNo")
+                sessionNo = jsonObject1.getInt("sessionNo")
 //                sessionType = jsonObject1.getString("sessionType")
                 sessionData = jsonObject1.getString("detectionData")
 //                time = jsonObject1.getString("time")

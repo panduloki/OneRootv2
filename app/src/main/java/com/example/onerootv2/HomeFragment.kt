@@ -361,7 +361,7 @@ class HomeFragment : Fragment() {
         activity?.finish()
     }
     private fun dispatchSessionActivity() {
-        val intent = Intent(activity, SessionActivity::class.java)
+        val intent = Intent(activity, SessionHistory::class.java)
         startActivity(intent)
         println("Home activity closed")
         activity?.finish()

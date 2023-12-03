@@ -243,7 +243,7 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
         pauseButton = findViewById(R.id.pauseButton)
         pauseButton.setOnClickListener(this)
 
-        imageView = findViewById(R.id.imageView)
+        imageView = findViewById(R.id.videoImageView)
         textureView = findViewById(R.id.textureView)
 
 //        flashLightButton = findViewById(R.id.flashlight)
@@ -1719,7 +1719,7 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
         // read file  from external storage
         try {
             if (isExternalStorageReadable()) {
-                println("reading from json data file")
+                println("reading profile json data file")
                 val dataFromJson = readFromExternalStorage()
                 println(" json data:  $dataFromJson")
                 val jsonObject = JSONObject(dataFromJson)

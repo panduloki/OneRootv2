@@ -9,15 +9,17 @@
     tools:context="com.example.onerootv2.HomeFragment">
 
     <ImageView
-        android:id="@+id/imageView"
+        android:id="@+id/homeImageView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:contentDescription="@string/background"
         android:minHeight="48dp"
         android:scaleType="centerCrop"
         android:src="@drawable/b3"
-        tools:layout_editor_absoluteX="-38dp"
-        tools:layout_editor_absoluteY="0dp" />
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/sessionButton"
