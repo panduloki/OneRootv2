@@ -83,5 +83,6 @@
     <string name="unloading_loading_image_description">unloading/loading image</string>
     <string name="coconutCount">0</string>
     <string name="date_text">Date</string>
+    <string name="session_history_button_description">session history button</string>
 
 </resources>
