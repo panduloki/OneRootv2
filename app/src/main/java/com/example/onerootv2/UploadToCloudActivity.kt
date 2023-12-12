@@ -191,6 +191,8 @@ class UploadToCloudActivity : AppCompatActivity() {
 
     }
 
+
+
     private fun uploadImagesToCloud(imagePath: String, cloudPath: String)
     {
         println("<----- Uploading image to cloud: $imagePath ------------>")

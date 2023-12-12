@@ -175,7 +175,7 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
 
         // shared preference values
         no = sharedPref?.getInt("imageNo", 0)!!
-        sessionNo = sharedPref.getInt("sessionNo", 0)
+        sessionNo = sharedPref.getInt("sessionNo", 1)
         sessionUser = sharedPref.getString("username","").toString()
         autoCapture = sharedPref.getBoolean("autoMode",true)
 

@@ -86,16 +86,17 @@
 
     <androidx.appcompat.widget.AppCompatImageButton
         android:id="@+id/sessionHistoryButton"
-        android:layout_width="60dp"
-        android:layout_height="55dp"
+        android:layout_width="72dp"
+        android:layout_height="62dp"
         android:layout_marginTop="44dp"
         android:layout_marginEnd="52dp"
         android:background="@drawable/round_button"
         android:paddingLeft="5dp"
-        android:src="@drawable/history_icon"
         android:paddingRight="5dp"
+        android:src="@drawable/history_icon"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        android:contentDescription="@string/session_history_button_description"/>
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

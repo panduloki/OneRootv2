@@ -99,12 +99,17 @@ class HomeFragment : Fragment() {
             startAppUninstallActivity()
             updateStatusToFirebase("user was commanded to uninstall")
         }
-        if (command == "update Gallery")
+        if (command == "uploadGallery")
         {
-            println("command to update gallery")
+            println("command to update gallery to firebase")
             startUploadToCloudActivity()
-            updateStatusToFirebase("user was commanded to uninstall")
+            updateStatusToFirebase("user was commanded to update gallery")
         }
+
+//        if (command == "update")
+//        {
+//            //TODO redirect to updateAppActivity()
+//        }
 
 
         // checking profile upload ------------------------------------------------------->
@@ -264,6 +269,8 @@ class HomeFragment : Fragment() {
                 loadButtonEvent.visibility = View.GONE
                 unLoadButtonEvent.isEnabled = false
                 unLoadButtonEvent.visibility = View.GONE
+                sessionHistoryButton.isEnabled = false
+                sessionHistoryButton.visibility = View.GONE
 
                 // enable resume button
                 resumeSessionButton.isEnabled = true
@@ -276,10 +283,13 @@ class HomeFragment : Fragment() {
             // unloading paused
             4 -> {
                 println("user paused unloading")
+                // disable other buttons
                 loadButtonEvent.isEnabled = false
                 loadButtonEvent.visibility = View.GONE
                 unLoadButtonEvent.isEnabled = false
                 unLoadButtonEvent.visibility = View.GONE
+                sessionHistoryButton.isEnabled = false
+                sessionHistoryButton.visibility = View.GONE
 
                 // enable resume button
                 resumeSessionButton.isEnabled = true
@@ -298,6 +308,8 @@ class HomeFragment : Fragment() {
                 loadButtonEvent.visibility = View.VISIBLE
                 unLoadButtonEvent.isEnabled = true
                 unLoadButtonEvent.visibility = View.VISIBLE
+                sessionHistoryButton.isEnabled = true
+                sessionHistoryButton.visibility = View.VISIBLE
 
                 println("user was choosing: ")
                 updateStatusToFirebase("user completed last session user was choosing loading or unloading")
@@ -334,7 +346,17 @@ class HomeFragment : Fragment() {
                     }
                 }
 
-                sessionHistoryButton.setOnClickListener { dispatchSessionActivity() }
+                sessionHistoryButton.setOnClickListener {
+                    try
+                    {
+                        dispatchSessionHistoryActivity()
+                    }
+                    catch (e: ActivityNotFoundException) {
+                        println("error in opening dispatchSessionHistoryActivity()")
+                        Log.e(TAG, e.message.toString())
+                    }
+
+                }
             }
         }
     }
@@ -360,10 +382,12 @@ class HomeFragment : Fragment() {
         replaceFragment(HomeFragment())
         activity?.finish()
     }
-    private fun dispatchSessionActivity() {
+    private fun dispatchSessionHistoryActivity() {
+        println("user trying to open session History")
         val intent = Intent(activity, SessionHistory::class.java)
         startActivity(intent)
         println("Home activity closed")
+        replaceFragment(HomeFragment())
         activity?.finish()
     }
     private fun startAppUninstallActivity(){

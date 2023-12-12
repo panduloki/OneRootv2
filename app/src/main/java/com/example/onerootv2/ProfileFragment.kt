@@ -32,7 +32,7 @@ private var sessionDataReadable = false
 
 var sessionStatus = ""
 var sessionType = ""
-var sessionNo = 0
+var sessionNo = 1
 var sessionUser = ""
 var sessionData = ""
 var detectionList = mutableListOf<Int>()
@@ -109,11 +109,12 @@ class ProfileFragment : Fragment() {
     {
 
         val bundle = Bundle()
-        imageDirectoryPath += (sessionNo-1)
+        imageDirectoryPath += (sessionNo)
         bundle.putString("path", imageDirectoryPath)
         val i = Intent(activity, GalleryActivity::class.java)
         i.putExtras(bundle)
         startActivity(i)
+        // clear image path
         imageDirectoryPath = "/DCIM/one_root_images/session"
         bundle.clear()
         // (activity as Activity?)!!.overridePendingTransition(0, 0)

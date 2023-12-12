@@ -25,15 +25,19 @@ import java.io.IOException
 // https://www.youtube.com/watch?v=dB9JOsVx-yY
 // https://www.youtube.com/watch?v=EoJX7h7lGxM
 var imagePath = "/DCIM/one_root_images/"
-var sessionNo2 = "0"
-class SessionHistory : AppCompatActivity() {
+var sessionNo2 = "1"
+class SessionHistory : AppCompatActivity()
+{
     // create new userRecyclerview to access recyclerview in xml layout
     private lateinit var userRecyclerView: RecyclerView
     // create a new userList using SessionUser.kt class
     private lateinit var userArrayList: ArrayList<SessionUser>
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?)
+    {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_session_history)
+        println("user clicked session history")
+
         userRecyclerView = findViewById(R.id.RecyclerGalleryView)
         userRecyclerView.layoutManager = LinearLayoutManager(this)
         userRecyclerView.setHasFixedSize(true)
@@ -45,25 +49,34 @@ class SessionHistory : AppCompatActivity() {
     }
     private fun getUserdata()
     {
-        // getting session data from session.json
+        try {
+            // getting session data from session.json
 
-        readSessionFromStorage()
+            readSessionFromStorage()
 
-        println("-------------------->user array list: $userArrayList")
+            println("-------------------->user array list: $userArrayList")
 
-        // crated an adapter for user
-        val adapter = SessionAdapter(userArrayList)
-        userRecyclerView.adapter= adapter
+            // crated an adapter for user
+            val adapter = SessionAdapter(userArrayList)
+            userRecyclerView.adapter = adapter
 
-        // when user clicked
-        adapter.setOnClickListener(object : SessionAdapter.OnItemClickListener{
-            override fun onItemClick(position: Int) {
+            // when user clicked
+            adapter.setOnClickListener(object : SessionAdapter.OnItemClickListener {
+                override fun onItemClick(position: Int) {
 //                val context = baseContext
 //                Toast.makeText( context,"user clicked item no:$position", Toast.LENGTH_SHORT).show()
-                dispatchGalleryIntent(position)
-            }
+                    dispatchGalleryIntent(position)
+                }
 
-        })
+            })
+        }
+        catch (e:Exception)
+        {
+            println("error in SessionHistory/get user data(): failed to get data from storage ")
+            e.printStackTrace()
+            val errorString = "\n error in SessionHistory/get user data(): failed to get data from storage    \n${e.message} \n $e"
+            saveErrorsInTextToStorage(errorString)
+        }
 
     }
 

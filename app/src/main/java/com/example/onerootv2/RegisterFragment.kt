@@ -114,7 +114,7 @@ class RegisterFragment : Fragment() {
                 putString("password",rgPassword)
                 // putString("mobileNo",mobile)
                 putInt("imageNo",1)
-                putInt("sessionNo",0)
+                putInt("sessionNo",1)
                 putInt("minArrowDist", 8)
                 putInt("maxArrowDist",99)
 

@@ -15,15 +15,15 @@ class AppUninstallActivity : AppCompatActivity() {
         println("uninstall process started")
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_app_uninstall)
-        
-//        val intent = Intent(Intent.ACTION_DELETE)
-//        intent.data = Uri.parse("package:com.example.onerootv2")
-//        startActivity(intent)
-//        print("app successfully uninstalled")
 
+        // open uninstall settings
         val i = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
         i.addCategory(Intent.CATEGORY_DEFAULT)
         i.data = Uri.parse("package:com.example.$packageName")
         startActivity(i)
     }
+
+    // TODO delete images folder before uninstall
+
+
 }
