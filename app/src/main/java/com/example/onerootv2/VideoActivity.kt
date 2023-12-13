@@ -222,7 +222,7 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
             }
         }
 
-        // updating status to firebase
+        // updating status to firebase at start
         updateStatusToFirebase("session_status: $sessionStatus")
 
         //  buttons initialisation after layout
@@ -344,6 +344,10 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
 
                         // * newly added store detections in paused detection every time since chances of crashes are more
                         storePausedDetectionsToFolder()
+
+                        // update status detections to firebase to follow
+                        val statusString = "$sessionStatus,SessionNo $sessionNo,$detections"
+                        updateStatusToFirebase(statusString)
                     }
                     else
                     {

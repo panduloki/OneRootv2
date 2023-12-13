@@ -85,6 +85,16 @@ class HomeFragment : Fragment() {
             // get CommandFrom Firebase else get command from profile.json when offline
             command = getCommandFromFireBase()
             println("----------------> command from firebase: $command")
+
+            // update status when app was first opened
+            val statusString: String = if (activity?.let { it1 -> checkForInternet(it1) } == true) {
+                "user was online"
+
+            } else {
+                "user was offline"
+            }
+            updateStatusToFirebase(statusString)
+
         }
         else
         {
@@ -362,8 +372,8 @@ class HomeFragment : Fragment() {
     }
 
     override fun onDestroyView() {
-        updateStatusToFirebase("user was offline")
         super.onDestroyView()
+//        updateStatusToFirebase("user closed the home fragment ")
     }
 
     private fun replaceFragment(fragment : Fragment){
@@ -381,6 +391,8 @@ class HomeFragment : Fragment() {
         println("home activity closed")
         replaceFragment(HomeFragment())
         activity?.finish()
+        // status updated
+        updateStatusToFirebase("user was capturing pictures")
     }
     private fun dispatchSessionHistoryActivity() {
         println("user trying to open session History")
