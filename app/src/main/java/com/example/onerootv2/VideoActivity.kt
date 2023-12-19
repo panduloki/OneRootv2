@@ -34,6 +34,8 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
 import com.example.onerootv2.ml.Coconut400
+//import com.example.onerootv2.ml.Best
+
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.gson.Gson
@@ -41,10 +43,17 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import org.json.JSONException
 import org.json.JSONObject
+//import org.tensorflow.lite.DataType
+//import org.tensorflow.lite.Interpreter
 import org.tensorflow.lite.support.common.FileUtil
+//import org.tensorflow.lite.support.common.ops.CastOp
+//import org.tensorflow.lite.support.common.ops.NormalizeOp
 import org.tensorflow.lite.support.image.ImageProcessor
 import org.tensorflow.lite.support.image.TensorImage
 import org.tensorflow.lite.support.image.ops.ResizeOp
+//import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
+import org.tensorflow.lite.task.vision.detector.Detection
+import org.tensorflow.lite.task.vision.detector.ObjectDetector
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileNotFoundException
@@ -113,6 +122,7 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
     private lateinit var cameraManager: CameraManager
     lateinit var textureView: TextureView
     private lateinit var model:Coconut400
+    //private lateinit var model:Best
 
     // initialising object variables
     private lateinit var captureButton: Button
@@ -252,6 +262,8 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
         labels = FileUtil.loadLabels(this, "coconut_labels.txt")
         imageProcessor = ImageProcessor.Builder().add(ResizeOp(300, 300, ResizeOp.ResizeMethod.BILINEAR)).build()
         model = Coconut400.newInstance(this)
+        //model = Best.newInstance(this)
+
         cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
 
         // getting distance values from shared preferences
@@ -1043,44 +1055,56 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
 
     private fun manualDetection(mutable5:Bitmap): Bitmap {
         try {
-            // auto mode detection rectangle
-            fun drawManualDetectionRectangles(mutable6: Bitmap, locationsList:FloatArray, scoresList:FloatArray): Bitmap {
-                val h = mutable6.height
-                val w = mutable6.width
+            val tfliteFilePath = "ml"
+            val tfliteFileName = "coconut400.tflite"
+            val tflitePath = File(this.getExternalFilesDir(tfliteFilePath), tfliteFileName)
 
-                // <----------------------- drawing  detections --------------------------------------->
-                val canvas = Canvas(mutable6)
-                paint.textSize = h / 20f
-                paint.strokeWidth = h / 200f
-                var x: Int
-                if (scoresList.isNotEmpty()) {
-                    scoresList.forEachIndexed { index, fl ->
-                        x = index
-                        x *= 4
-                        // display rectangles
-                        if (fl > 0.5) {
+            if (tflitePath.exists())
+            {
+                println("tflite model exists in path: $tflitePath to detect coconut images")
+                return detectionUsingTfliteInFolder(mutable5)
+            }
+            else
+            {
+                println("The file in path: $tflitePath does not exist. using default coconut400.tflite")
+                // auto mode detection rectangle
+                fun drawManualDetectionRectangles(mutable6: Bitmap, locationsList:FloatArray, scoresList:FloatArray): Bitmap {
+                    val h = mutable6.height
+                    val w = mutable6.width
 
-                            // add to global list
-                            confidenceList.add(fl)
-                            locationsL.add((locationsList[x + 1] * w))
-                            locationsT.add((locationsList[x] * h))
-                            locationsR.add((locationsList[x + 3] * w))
-                            locationsB.add((locationsList[x + 2] * h))
+                    // <----------------------- drawing  detections --------------------------------------->
+                    val canvas = Canvas(mutable6)
+                    paint.textSize = h / 20f
+                    paint.strokeWidth = h / 200f
+                    var x: Int
+                    if (scoresList.isNotEmpty()) {
+                        scoresList.forEachIndexed { index, fl ->
+                            x = index
+                            x *= 4
+                            // display rectangles
+                            if (fl > 0.5) {
+
+                                // add to global list
+                                confidenceList.add(fl)
+                                locationsL.add((locationsList[x + 1] * w))
+                                locationsT.add((locationsList[x] * h))
+                                locationsR.add((locationsList[x + 3] * w))
+                                locationsB.add((locationsList[x + 2] * h))
 
 
-                            // draw detected rectangles
-                            paint.color = Color.GREEN
-                            paint.style = Paint.Style.STROKE
-                            canvas.drawRect(
-                                RectF(
-                                    locationsList[x + 1] * w,
-                                    locationsList[x] * h,
-                                    locationsList[x + 3] * w,
-                                    locationsList[x + 2] * h
-                                ), paint
-                            )
+                                // draw detected rectangles
+                                paint.color = Color.GREEN
+                                paint.style = Paint.Style.STROKE
+                                canvas.drawRect(
+                                    RectF(
+                                        locationsList[x + 1] * w,
+                                        locationsList[x] * h,
+                                        locationsList[x + 3] * w,
+                                        locationsList[x + 2] * h
+                                    ), paint
+                                )
 
-                            // display name of class and confidence
+                                // display name of class and confidence
 //                    paint.style = Paint.Style.FILL
 //                    paint.color = Color.BLUE
 //                    canvas.drawText(
@@ -1091,90 +1115,94 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
 //                        paint
 //                    )
 
-                        }
+                            }
 
-                        // for less confidence image
-                        else if((fl>0.3)&&(fl<0.5))
-                        {
-                            // draw detected rectangles
-                            paint.color = Color.RED
-                            paint.style = Paint.Style.STROKE
-                            canvas.drawRect(
-                                RectF(
+                            // for less confidence image
+                            else if((fl>0.3)&&(fl<0.5))
+                            {
+                                // draw detected rectangles
+                                paint.color = Color.RED
+                                paint.style = Paint.Style.STROKE
+                                canvas.drawRect(
+                                    RectF(
+                                        locationsList[x + 1] * w,
+                                        locationsList[x] * h,
+                                        locationsList[x + 3] * w,
+                                        locationsList[x + 2] * h
+                                    ), paint
+                                )
+
+                                // display name of class and confidence
+                                paint.style = Paint.Style.FILL
+                                paint.color = Color.BLUE
+                                canvas.drawText(
+                                    fl.toString(),
+                                    //  labels[classes[index].toInt()] + " " + fl.toString(),
                                     locationsList[x + 1] * w,
                                     locationsList[x] * h,
-                                    locationsList[x + 3] * w,
-                                    locationsList[x + 2] * h
-                                ), paint
-                            )
+                                    paint
+                                )
 
-                            // display name of class and confidence
-                            paint.style = Paint.Style.FILL
-                            paint.color = Color.BLUE
-                            canvas.drawText(
-                                fl.toString(),
-                                //  labels[classes[index].toInt()] + " " + fl.toString(),
-                                locationsList[x + 1] * w,
-                                locationsList[x] * h,
-                                paint
-                            )
+                            }
 
                         }
-
                     }
+
+                    //<-----------------------------display  detection variables ------------------------->
+                    present_coconut_count = locationsL.size
+                    // display no of coconuts
+                    paint.color = Color.BLUE
+                    paint.style = Paint.Style.FILL
+                    canvas.drawText(
+                        "present count: $present_coconut_count",
+                        (50).toFloat(), (100).toFloat(), paint
+                    )
+
+                    // display total no of coconuts
+                    paint.color = Color.RED
+                    paint.style = Paint.Style.FILL
+                    canvas.drawText(
+                        "session coconut count: $present_session_coconut_count",
+                        (50).toFloat(), (250).toFloat(), paint
+                    )
+
+                    // getting best picture
+                    best_count = present_coconut_count
+                    bestPicSelected = true
+                    bestPic = mutable6.copy(Bitmap.Config.ARGB_8888, true)
+
+                    // print best picture selected text
+                    paint.color = Color.YELLOW
+                    paint.style = Paint.Style.FILL
+                    paint.textSize = 75F
+                    canvas.drawText(
+                        "best pic selected",
+                        (50).toFloat(), (h*0.7).toFloat(), paint
+                    )
+
+                    // clear values
+                    locationsL.clear()
+                    locationsB.clear()
+                    locationsT.clear()
+                    locationsR.clear()
+
+                    return mutable6
                 }
 
-                //<-----------------------------display  detection variables ------------------------->
-                present_coconut_count = locationsL.size
-                // display no of coconuts
-                paint.color = Color.BLUE
-                paint.style = Paint.Style.FILL
-                canvas.drawText(
-                    "present count: $present_coconut_count",
-                    (50).toFloat(), (100).toFloat(), paint
-                )
-
-                // display total no of coconuts
-                paint.color = Color.RED
-                paint.style = Paint.Style.FILL
-                canvas.drawText(
-                    "session coconut count: $present_session_coconut_count",
-                    (50).toFloat(), (250).toFloat(), paint
-                )
-
-                // getting best picture
-                best_count = present_coconut_count
-                bestPicSelected = true
-                bestPic = mutable6.copy(Bitmap.Config.ARGB_8888, true)
-
-                // print best picture selected text
-                paint.color = Color.YELLOW
-                paint.style = Paint.Style.FILL
-                paint.textSize = 75F
-                canvas.drawText(
-                    "best pic selected",
-                    (50).toFloat(), (h*0.7).toFloat(), paint
-                )
-
-                // clear values
-                locationsL.clear()
-                locationsB.clear()
-                locationsT.clear()
-                locationsR.clear()
-
-                return mutable6
+                // tensorflow  detection
+                var image = TensorImage.fromBitmap(mutable5)
+                image = imageProcessor.process(image)
+                val outputs = model.process(image)
+                val locations = outputs.locationAsTensorBuffer.floatArray
+                // val classes = outputs.categoryAsTensorBuffer.floatArray
+                val scores = outputs.scoreAsTensorBuffer.floatArray
+                // val numberOfDetections = outputs.numberOfDetectionsAsTensorBuffer.floatArray
+                // println("manual detection was  completed sending best image")
+                return drawManualDetectionRectangles(mutable5,locations,scores)
             }
 
-            // tensorflow  detection
-            var image = TensorImage.fromBitmap(mutable5)
-            image = imageProcessor.process(image)
-            val outputs = model.process(image)
-            val locations = outputs.locationAsTensorBuffer.floatArray
-            // val classes = outputs.categoryAsTensorBuffer.floatArray
-            val scores = outputs.scoreAsTensorBuffer.floatArray
-            // val numberOfDetections = outputs.numberOfDetectionsAsTensorBuffer.floatArray
-            // println("manual detection was  completed sending best image")
-            return drawManualDetectionRectangles(mutable5,locations,scores)
+
+
         }
         catch (e: Exception) {
             println("error in videoActivity/manualDetection(): problem in tensorflow  manual detection")
@@ -1962,7 +1990,239 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
 //    }
 
 
+    private fun detectionUsingTfliteInFolder(bitmap: Bitmap): Bitmap {
+        fun drawDetectionResult(inputBitmap: Bitmap, detectionResults: List<Detection>): Bitmap {
+            val outputBitmap = inputBitmap.copy(Bitmap.Config.ARGB_8888, true)
+            // <----------------------- drawing  detections --------------------------------------->
+            val h = inputBitmap.height
+            // val w = inputBitmap.width
+            val canvas = Canvas(outputBitmap)
+            paint.textSize = h / 20f
+            paint.strokeWidth = h / 200f
+
+            detectionResults.forEach {
+                // draw bounding box
+                val boundingBoxes = it.boundingBox
+                //val category_list  = it.categories
+
+                // draw detected rectangles
+                paint.color = Color.YELLOW
+                paint.style = Paint.Style.STROKE
+                canvas.drawRect(
+                    RectF(
+                        boundingBoxes.left,
+                        boundingBoxes.top,
+                        boundingBoxes.right ,
+                        boundingBoxes.bottom
+                    ), paint
+                )
+
+            }
+            return outputBitmap
+        }
+
+        // Step 1: Create TFLite's TensorImage object
+        val image = TensorImage.fromBitmap(bitmap)
+
+        // Step 2: Initialize the detector object
+        val options = ObjectDetector.ObjectDetectorOptions.builder()
+            .setMaxResults(50)
+            .setScoreThreshold(0.5f)
+            .build()
+        // tflite model
+        val detector = ObjectDetector.createFromFileAndOptions(
+            this,
+            "coconut400.tflite",
+            options
+        )
+
+        // Step 3: Feed given image to the detector
+        val results:MutableList<Detection> = detector.detect(image)
+        println("********** results: $results")
+        
+        return drawDetectionResult(bitmap,results)
+
+    }
+
 }
+
+//private fun runObjectDetection(bitmap: Bitmap) {
+//    // Initialize an instance of the Detector class by passing the context (this refers to the current activity or application context).
+//
+//    val detector = Detector(this)
+//
+//    // Call the detector setup function to load the YOLOv8 model from your assets folder.
+//    detector.setup()
+//
+//    // Whenever you capture an image or frame that you want to pass through the model for detection, call the detect function like so:
+//    detector.detect(bitmap)
+//
+//    // Remember to call the clear function when you're done to release resources.
+//
+//    detector.clear()
+//
+////        // Step 1: Create TFLite s TensorImage object
+////        val image = TensorImage.fromBitmap(bitmap)
+////
+////        // Step 2: Initialize the detector object
+////        val options = ObjectDetector.ObjectDetectorOptions.builder()
+////            .setMaxResults(50)
+////            .setScoreThreshold(0.5f)
+////            .build()
+////        // tflite model
+////        val detector = ObjectDetector.createFromFileAndOptions(
+////            this,
+////            "best32.tflite",
+////            options
+////        )
+////
+////        // Step 3: Feed given image to the detector
+////        val results = detector.detect(image)
+////        for (result in results)
+////        {
+////            println("bounding box using best16.tflite: ${result.boundingBox}")
+////        }
+//
+//}
+
+
+//class Detector(private val context: Context) {
+//    private var interpreter: Interpreter? = null
+//
+//    private val imageProcessor = ImageProcessor.Builder()
+//        .add(NormalizeOp(INPUT_MEAN, INPUT_STANDARD_DEVIATION))
+//        .add(CastOp(INPUT_IMAGE_TYPE))
+//        .build()
+//
+//    fun setup() {
+//        val model = FileUtil.loadMappedFile(context, "coconut400.tflite")
+//        val options = Interpreter.Options()
+//        options.numThreads = 4
+//        interpreter = Interpreter(model, options)
+//    }
+//
+//    fun clear() {
+//        interpreter?.close()
+//        interpreter = null
+//    }
+//
+//    private var squareSize = 0
+//    private var left = 0
+//    private var top = 0
+//
+//    fun detect(frame: Bitmap) {
+//        interpreter ?: return
+//
+//
+//        val croppedBitmap = Bitmap.createBitmap(frame, left, top, squareSize, squareSize)
+//        val resizedBitmap = Bitmap.createScaledBitmap(croppedBitmap, TENSOR_WIDTH, TENSOR_HEIGHT, false)
+//
+//        val tensorImage = TensorImage(DataType.FLOAT32)
+//        tensorImage.load(resizedBitmap)
+//        val processedImage = imageProcessor.process(tensorImage)
+//        val imageBuffer = processedImage.buffer
+//
+//        val output = TensorBuffer.createFixedSize(intArrayOf(1 , 5, NUM_ELEMENTS), OUTPUT_IMAGE_TYPE)
+//        interpreter?.run(imageBuffer, output.buffer)
+//
+//        val bestBoxes = bestBox(output.floatArray)
+//
+//    }
+//
+//    private fun bestBox(array: FloatArray) : List<BoundingBox>? {
+//
+//        val boundingBoxes = mutableListOf<BoundingBox>()
+//        for (c in 0 until NUM_ELEMENTS) {
+//            val cnf = array[c + NUM_ELEMENTS * 4]
+//            if (cnf > CONFIDENCE_THRESHOLD) {
+//                val cx = array[c]
+//                val cy = array[c + NUM_ELEMENTS]
+//                val w = array[c + NUM_ELEMENTS * 2]
+//                val h = array[c + NUM_ELEMENTS * 3]
+//                val x1 = cx - (w/2F)
+//                val y1 = cy - (h/2F)
+//                val x2 = cx + (w/2F)
+//                val y2 = cy + (h/2F)
+//                if (x1 <= 0F || x1 >= TENSOR_WIDTH_FLOAT) continue
+//                if (y1 <= 0F || y1 >= TENSOR_HEIGHT_FLOAT) continue
+//                if (x2 <= 0F || x2 >= TENSOR_WIDTH_FLOAT) continue
+//                if (y2 <= 0F || y2 >= TENSOR_HEIGHT_FLOAT) continue
+//                boundingBoxes.add(
+//                    BoundingBox(
+//                        x1 = x1, y1 = y1, x2 = x2, y2 = y2,
+//                        cx = cx, cy = cy, w = w, h = h, cnf = cnf
+//                    )
+//                )
+//            }
+//        }
+//
+//        if (boundingBoxes.isEmpty()) return null
+//
+//        return applyNMS(boundingBoxes)
+//    }
+//
+//    private fun applyNMS(boxes: List<BoundingBox>) : MutableList<BoundingBox> {
+//        val sortedBoxes = boxes.sortedByDescending { it.w * it.h }.toMutableList()
+//        val selectedBoxes = mutableListOf<BoundingBox>()
+//
+//        while(sortedBoxes.isNotEmpty()) {
+//            val first = sortedBoxes.first()
+//            selectedBoxes.add(first)
+//            sortedBoxes.remove(first)
+//
+//            val iterator = sortedBoxes.iterator()
+//            while (iterator.hasNext()) {
+//                val nextBox = iterator.next()
+//                val iou = calculateIoU(first, nextBox)
+//                if (iou >= IOU_THRESHOLD) {
+//                    iterator.remove()
+//                }
+//            }
+//        }
+//
+//        return selectedBoxes
+//    }
+//
+//    private fun calculateIoU(box1: BoundingBox, box2: BoundingBox): Float {
+//        val x1 = maxOf(box1.x1, box2.x1)
+//        val y1 = maxOf(box1.y1, box2.y1)
+//        val x2 = minOf(box1.x2, box2.x2)
+//        val y2 = minOf(box1.y2, box2.y2)
+//        val intersectionArea = maxOf(0F, x2 - x1) * maxOf(0F, y2 - y1)
+//        val box1Area = box1.w * box1.h
+//        val box2Area = box2.w * box2.h
+//        return intersectionArea / (box1Area + box2Area - intersectionArea)
+//    }
+//
+//    companion object {
+//        private const val TENSOR_WIDTH = 256
+//        private const val TENSOR_HEIGHT = 256
+//        private const val TENSOR_WIDTH_FLOAT = TENSOR_WIDTH.toFloat()
+//        private const val TENSOR_HEIGHT_FLOAT = TENSOR_HEIGHT.toFloat()
+//
+//        private const val INPUT_MEAN = 0f
+//        private const val INPUT_STANDARD_DEVIATION = 255f
+//
+//        private val INPUT_IMAGE_TYPE = DataType.FLOAT32
+//        private val OUTPUT_IMAGE_TYPE = DataType.FLOAT32
+//
+////        private const val NUM_ELEMENTS = 1344
+//        private const val NUM_ELEMENTS = 1344
+//        private const val CONFIDENCE_THRESHOLD = 0.75F
+//        private const val IOU_THRESHOLD = 0.5F
+//    }
+//    data class BoundingBox(
+//        val x1:Float,
+//        val y1:Float,
+//        val x2:Float,
+//        val y2:Float,
+//        val cx:Float,
+//        val cy:Float,
+//        val w:Float,
+//        val h:Float,
+//        val cnf:Float,
+//    )
+//}
 
 
 
