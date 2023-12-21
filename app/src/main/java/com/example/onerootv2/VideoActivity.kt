@@ -101,14 +101,26 @@ var minArrowDistance = 8
 var maxArrowDistance = 90
 var saveBestPic = false
 var bestPicSelected = false
-var bestPic: Bitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888)
-var best_count = 0
 
+var best_count = 0
+var useMlInFolder = false
 // for playing sound
 private var mMediaPlayer: MediaPlayer? = null
 
 
 var captureButtonPressed = false
+
+
+// best values
+var bestPic: Bitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888)
+
+
+var bestImageName: String = ""
+var bestImagePath: String = ""
+var bestLocationsList: MutableList<MutableList<Int>> = arrayListOf()
+var bestConfidenceList: MutableList<Float> = arrayListOf()
+var bestConfidenceColorList: MutableList<Boolean> = arrayListOf()
+
 
 class VideoActivity : AppCompatActivity(), View.OnClickListener {
     private lateinit var labels:List<String>
@@ -117,6 +129,8 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
     lateinit var bitmap:Bitmap
     // late init var mutable:Bitmap
     lateinit var imageView: ImageView
+    // private lateinit var cropImageView: ImageView
+
     lateinit var cameraDevice: CameraDevice
     lateinit var handler: Handler
     private lateinit var cameraManager: CameraManager
@@ -331,6 +345,7 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
                         // show best pic
                         imageView.setImageBitmap(bestPic)
 
+                        // <---------------------- save results ---------------------->
                         // save best pic in gallery
                         val fileName1 = "img$no"
                         val folderName1 = "DCIM/one_root_images/session$sessionNo"
@@ -343,6 +358,17 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
                         val fileName2 = "orgImg$no"
                         val folderName2 = "DCIM/one_root_original_images/session$sessionNo"
                         storeBitmap(mutable2,fileName2,folderName2)
+
+                        // getting best picture *****************************************
+                        bestImageName = "$fileName2.jpg"
+                        bestImagePath = "$folderName2/$bestImageName"
+//                        bestLocationsList
+//                        bestConfidenceList
+//                        bestConfidenceColorList
+//
+//                        // TODO STORE BEST DETECTION DATA HERE
+//                        storeDetectionClassToFolder(bestImageName, bestImagePath, bestLocationsList, bestConfidenceList,
+//                            bestConfidenceColorList, sessionNo)
 
                         no+=1
 
@@ -1059,19 +1085,24 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
             val tfliteFileName = "coconut400.tflite"
             val tflitePath = File(this.getExternalFilesDir(tfliteFilePath), tfliteFileName)
 
-            if (tflitePath.exists())
+            // check tflite path exists or not
+            if ((tflitePath.exists()) and (useMlInFolder))
             {
                 println("tflite model exists in path: $tflitePath to detect coconut images")
                 return detectionUsingTfliteInFolder(mutable5)
             }
             else
             {
+                // for best detections
+                val presentLocationList:MutableList<MutableList<Int>> = arrayListOf()
+                val presentConfidenceList:MutableList<Float> = arrayListOf()
+                val presentConfidenceColorList:MutableList<Boolean> = arrayListOf()
+
                 println("The file in path: $tflitePath does not exist. using default coconut400.tflite")
                 // auto mode detection rectangle
                 fun drawManualDetectionRectangles(mutable6: Bitmap, locationsList:FloatArray, scoresList:FloatArray): Bitmap {
                     val h = mutable6.height
                     val w = mutable6.width
-
                     // <----------------------- drawing  detections --------------------------------------->
                     val canvas = Canvas(mutable6)
                     paint.textSize = h / 20f
@@ -1081,8 +1112,20 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
                         scoresList.forEachIndexed { index, fl ->
                             x = index
                             x *= 4
+
                             // display rectangles
                             if (fl > 0.5) {
+                                // present location list
+                                presentLocationList.add(
+                                    mutableListOf(
+                                        (locationsList[x + 1] * w).toInt(),
+                                        (locationsList[x] * h).toInt(),
+                                        (locationsList[x + 3] * w).toInt(),
+                                        (locationsList[x + 2] * h).toInt()
+                                    )
+                                )
+                                presentConfidenceList.add(fl)
+                                presentConfidenceColorList.add(true)
 
                                 // add to global list
                                 confidenceList.add(fl)
@@ -1105,21 +1148,32 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
                                 )
 
                                 // display name of class and confidence
-//                    paint.style = Paint.Style.FILL
-//                    paint.color = Color.BLUE
-//                    canvas.drawText(
-//                        fl.toString(),
-//                        //  labels[classes[index].toInt()] + " " + fl.toString(),
-//                        locationsList[x + 1] * w,
-//                        locationsList[x] * h,
-//                        paint
-//                    )
+//                                paint.style = Paint.Style.FILL
+//                                paint.color = Color.BLUE
+//                                canvas.drawText(
+//                                    fl.toString(),
+//                                    //  labels[classes[index].toInt()] + " " + fl.toString(),
+//                                    locationsList[x + 1] * w,
+//                                    locationsList[x] * h,
+//                                    paint
+//                                )
 
                             }
 
                             // for less confidence image
                             else if((fl>0.3)&&(fl<0.5))
                             {
+                                presentLocationList.add(
+                                    mutableListOf(
+                                        (locationsList[x + 1] * w).toInt(),
+                                        (locationsList[x] * h).toInt(),
+                                        (locationsList[x + 3] * w).toInt(),
+                                        (locationsList[x + 2] * h).toInt()
+                                    )
+                                )
+                                presentConfidenceList.add(fl)
+                                presentConfidenceColorList.add(true)
+
                                 // draw detected rectangles
                                 paint.color = Color.RED
                                 paint.style = Paint.Style.STROKE
@@ -1166,10 +1220,13 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
                         (50).toFloat(), (250).toFloat(), paint
                     )
 
-                    // getting best picture
                     best_count = present_coconut_count
                     bestPicSelected = true
                     bestPic = mutable6.copy(Bitmap.Config.ARGB_8888, true)
+                    bestLocationsList = presentLocationList
+                    bestConfidenceList = presentConfidenceList
+                    bestConfidenceColorList = presentConfidenceColorList
+
 
                     // print best picture selected text
                     paint.color = Color.YELLOW
@@ -1690,8 +1747,6 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
             val errorString = "\n error in videoActivity/storeSessionDataToFirebase(): firebase storing session data failed \n${e.message}"
             saveErrorsInTextToStorage(errorString)
         }
-
-
         finally
         {
             println("session data stored successfully in database")
@@ -1704,6 +1759,108 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
         println("home activity closed")
         startActivity(intent)
         this.finish()
+    }
+
+    private fun readDetectionClassFromFolder(): JSONObject? {
+        // https://www.youtube.com/watch?v=JUlZYddw03o
+        // https://github.com/sandipapps/ExternalStorageDemo/blob/master/app/src/main/java/com/sandipbhattacharya/externalstoragedemo/MainActivity.java
+
+        val filepath = "OneRootFiles"
+        val fileName  = "detections.json"
+        println("video activity()/ reading detection.json from storage")
+
+        fun isExternalStorageReadable(): Boolean {
+            val state = Environment.getExternalStorageState()
+            return Environment.MEDIA_MOUNTED == state || Environment.MEDIA_MOUNTED_READ_ONLY == state
+        }
+
+        fun readFromExternalStorage(): String {
+            val myExternalFile = File(this.getExternalFilesDir(filepath), fileName)
+            val stringBuilder = StringBuilder()
+            try {
+                val fileReader = FileReader(myExternalFile)
+                val bufferedReader = BufferedReader(fileReader)
+                var line: String?
+                while (bufferedReader.readLine().also { line = it } != null) {
+                    stringBuilder.append(line)
+                }
+                bufferedReader.close()
+            } catch (e: FileNotFoundException) {
+                e.printStackTrace()
+            } catch (e: IOException) {
+                e.printStackTrace()
+            }
+            return stringBuilder.toString()
+        }
+
+
+        // read file  from external storage
+        try {
+            if (isExternalStorageReadable())
+            {
+                println("detections.json exists reading detection json data file")
+                val dataFromJson = readFromExternalStorage()
+                println(" json data:  $dataFromJson")
+                val jsonObject = JSONObject(dataFromJson)
+                userName = jsonObject.getString("username")
+                mobileNo = jsonObject.getString("mobileNo")
+                location = jsonObject.getString("location")
+                role = jsonObject.getString("role")
+//              println("username from file: $userName")
+//              println("mobile No from file: $mobileNo")
+                return jsonObject
+            }
+            else
+            {
+
+                Toast.makeText(
+                    this,
+                    "External storage not available for reading",
+                    Toast.LENGTH_SHORT
+                ).show()
+                return  null
+            }
+        }
+        catch (e: JSONException) {
+            println("error in videoActivity/readDetectionsFromStorage(): detections.json file cant be read")
+            e.printStackTrace()
+            val errorString = "\n error in videoActivity/readDetectionsFromStorage(): detections.json file cant be read. \n${e.message}"
+            saveErrorsInTextToStorage(errorString)
+            return null
+        }
+        finally {
+            println("profile data read from folder successfully")
+        }
+    }
+
+    private fun storeDetectionClassToFolder(imageName:String,imagePath:String,locationList: MutableList<MutableList<Int>>,confidenceList: MutableList<Float>, confidenceColorList: MutableList<Boolean>, sessionNum:Int)
+    {
+        val filepath = "OneRootFiles"
+        val fileName  = "detections.json"
+        println("video activity()/ writing  detection.json from storage")
+
+        fun isExternalStorageWritable(): Boolean {
+            val state = Environment.getExternalStorageState()
+            return Environment.MEDIA_MOUNTED == state
+        }
+
+        fun saveToExternalStorage(jsonData:String) {
+            val filePath = this.getExternalFilesDir(filepath)
+            val myExternalFile = File(filePath, fileName)
+            try {
+                val fileOutputStream = FileOutputStream(myExternalFile)
+                fileOutputStream.write(jsonData.toByteArray())
+                fileOutputStream.close()
+                println("file saved in $myExternalFile")
+            }
+            catch (e: IOException) {
+                e.printStackTrace()
+            }
+        }
+
+
+        val dict2 = readDetectionClassFromFolder()
+
     }
 
 //    private fun saveImagesToCloud()
@@ -1784,7 +1941,6 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
 
     private fun updateProfileJsonToStorage()
     {
-
         val filepath = "OneRootFiles"
         val fileName  = "profile.json"
         println("storing json data on registration")
@@ -1961,35 +2117,8 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
 
 
     }
-
-    // flash light
-    // https://www.ssaurel.com/blog/create-a-torch-flashlight-application-for-android/
-//    private fun flashLightOn() {
-//        val cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
-//        try {
-//            val cameraId = cameraManager.cameraIdList[0]
-//            cameraManager.setTorchMode(cameraId, true)
-//            flashLightStatus = true
-//            flashLightButton.setImageResource(R.drawable.flashlight_on)
-//        }
-//        catch (e: CameraAccessException) {
-//            println("error: flashlight was not able to turned on")
-//        }
-//    }
-//
-//    private fun flashLightOff() {
-//        val cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
-//        try {
-//            val cameraId = cameraManager.cameraIdList[0]
-//            cameraManager.setTorchMode(cameraId, false)
-//            flashLightStatus = false
-//            flashLightButton.setImageResource(R.drawable.flashlight_off)
-//        } catch (e: CameraAccessException) {
-//            println("error: flashlight was not able to turned off")
-//        }
-//    }
-
-
+    // TODO download new tflite model when released
+    // TODO send images to cloud with text files of all image paths which was easy to download later
     private fun detectionUsingTfliteInFolder(bitmap: Bitmap): Bitmap {
         fun drawDetectionResult(inputBitmap: Bitmap, detectionResults: List<Detection>): Bitmap {
             val outputBitmap = inputBitmap.copy(Bitmap.Config.ARGB_8888, true)
@@ -2021,7 +2150,7 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
             return outputBitmap
         }
 
-        // Step 1: Create TFLite's TensorImage object
+        // Step 1: Create TF Lite TensorImage object
         val image = TensorImage.fromBitmap(bitmap)
 
         // Step 2: Initialize the detector object
@@ -2046,183 +2175,7 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
 
 }
 
-//private fun runObjectDetection(bitmap: Bitmap) {
-//    // Initialize an instance of the Detector class by passing the context (this refers to the current activity or application context).
-//
-//    val detector = Detector(this)
-//
-//    // Call the detector setup function to load the YOLOv8 model from your assets folder.
-//    detector.setup()
-//
-//    // Whenever you capture an image or frame that you want to pass through the model for detection, call the detect function like so:
-//    detector.detect(bitmap)
-//
-//    // Remember to call the clear function when you're done to release resources.
-//
-//    detector.clear()
-//
-////        // Step 1: Create TFLite s TensorImage object
-////        val image = TensorImage.fromBitmap(bitmap)
-////
-////        // Step 2: Initialize the detector object
-////        val options = ObjectDetector.ObjectDetectorOptions.builder()
-////            .setMaxResults(50)
-////            .setScoreThreshold(0.5f)
-////            .build()
-////        // tflite model
-////        val detector = ObjectDetector.createFromFileAndOptions(
-////            this,
-////            "best32.tflite",
-////            options
-////        )
-////
-////        // Step 3: Feed given image to the detector
-////        val results = detector.detect(image)
-////        for (result in results)
-////        {
-////            println("bounding box using best16.tflite: ${result.boundingBox}")
-////        }
-//
-//}
 
-
-//class Detector(private val context: Context) {
-//    private var interpreter: Interpreter? = null
-//
-//    private val imageProcessor = ImageProcessor.Builder()
-//        .add(NormalizeOp(INPUT_MEAN, INPUT_STANDARD_DEVIATION))
-//        .add(CastOp(INPUT_IMAGE_TYPE))
-//        .build()
-//
-//    fun setup() {
-//        val model = FileUtil.loadMappedFile(context, "coconut400.tflite")
-//        val options = Interpreter.Options()
-//        options.numThreads = 4
-//        interpreter = Interpreter(model, options)
-//    }
-//
-//    fun clear() {
-//        interpreter?.close()
-//        interpreter = null
-//    }
-//
-//    private var squareSize = 0
-//    private var left = 0
-//    private var top = 0
-//
-//    fun detect(frame: Bitmap) {
-//        interpreter ?: return
-//
-//
-//        val croppedBitmap = Bitmap.createBitmap(frame, left, top, squareSize, squareSize)
-//        val resizedBitmap = Bitmap.createScaledBitmap(croppedBitmap, TENSOR_WIDTH, TENSOR_HEIGHT, false)
-//
-//        val tensorImage = TensorImage(DataType.FLOAT32)
-//        tensorImage.load(resizedBitmap)
-//        val processedImage = imageProcessor.process(tensorImage)
-//        val imageBuffer = processedImage.buffer
-//
-//        val output = TensorBuffer.createFixedSize(intArrayOf(1 , 5, NUM_ELEMENTS), OUTPUT_IMAGE_TYPE)
-//        interpreter?.run(imageBuffer, output.buffer)
-//
-//        val bestBoxes = bestBox(output.floatArray)
-//
-//    }
-//
-//    private fun bestBox(array: FloatArray) : List<BoundingBox>? {
-//
-//        val boundingBoxes = mutableListOf<BoundingBox>()
-//        for (c in 0 until NUM_ELEMENTS) {
-//            val cnf = array[c + NUM_ELEMENTS * 4]
-//            if (cnf > CONFIDENCE_THRESHOLD) {
-//                val cx = array[c]
-//                val cy = array[c + NUM_ELEMENTS]
-//                val w = array[c + NUM_ELEMENTS * 2]
-//                val h = array[c + NUM_ELEMENTS * 3]
-//                val x1 = cx - (w/2F)
-//                val y1 = cy - (h/2F)
-//                val x2 = cx + (w/2F)
-//                val y2 = cy + (h/2F)
-//                if (x1 <= 0F || x1 >= TENSOR_WIDTH_FLOAT) continue
-//                if (y1 <= 0F || y1 >= TENSOR_HEIGHT_FLOAT) continue
-//                if (x2 <= 0F || x2 >= TENSOR_WIDTH_FLOAT) continue
-//                if (y2 <= 0F || y2 >= TENSOR_HEIGHT_FLOAT) continue
-//                boundingBoxes.add(
-//                    BoundingBox(
-//                        x1 = x1, y1 = y1, x2 = x2, y2 = y2,
-//                        cx = cx, cy = cy, w = w, h = h, cnf = cnf
-//                    )
-//                )
-//            }
-//        }
-//
-//        if (boundingBoxes.isEmpty()) return null
-//
-//        return applyNMS(boundingBoxes)
-//    }
-//
-//    private fun applyNMS(boxes: List<BoundingBox>) : MutableList<BoundingBox> {
-//        val sortedBoxes = boxes.sortedByDescending { it.w * it.h }.toMutableList()
-//        val selectedBoxes = mutableListOf<BoundingBox>()
-//
-//        while(sortedBoxes.isNotEmpty()) {
-//            val first = sortedBoxes.first()
-//            selectedBoxes.add(first)
-//            sortedBoxes.remove(first)
-//
-//            val iterator = sortedBoxes.iterator()
-//            while (iterator.hasNext()) {
-//                val nextBox = iterator.next()
-//                val iou = calculateIoU(first, nextBox)
-//                if (iou >= IOU_THRESHOLD) {
-//                    iterator.remove()
-//                }
-//            }
-//        }
-//
-//        return selectedBoxes
-//    }
-//
-//    private fun calculateIoU(box1: BoundingBox, box2: BoundingBox): Float {
-//        val x1 = maxOf(box1.x1, box2.x1)
-//        val y1 = maxOf(box1.y1, box2.y1)
-//        val x2 = minOf(box1.x2, box2.x2)
-//        val y2 = minOf(box1.y2, box2.y2)
-//        val intersectionArea = maxOf(0F, x2 - x1) * maxOf(0F, y2 - y1)
-//        val box1Area = box1.w * box1.h
-//        val box2Area = box2.w * box2.h
-//        return intersectionArea / (box1Area + box2Area - intersectionArea)
-//    }
-//
-//    companion object {
-//        private const val TENSOR_WIDTH = 256
-//        private const val TENSOR_HEIGHT = 256
-//        private const val TENSOR_WIDTH_FLOAT = TENSOR_WIDTH.toFloat()
-//        private const val TENSOR_HEIGHT_FLOAT = TENSOR_HEIGHT.toFloat()
-//
-//        private const val INPUT_MEAN = 0f
-//        private const val INPUT_STANDARD_DEVIATION = 255f
-//
-//        private val INPUT_IMAGE_TYPE = DataType.FLOAT32
-//        private val OUTPUT_IMAGE_TYPE = DataType.FLOAT32
-//
-////        private const val NUM_ELEMENTS = 1344
-//        private const val NUM_ELEMENTS = 1344
-//        private const val CONFIDENCE_THRESHOLD = 0.75F
-//        private const val IOU_THRESHOLD = 0.5F
-//    }
-//    data class BoundingBox(
-//        val x1:Float,
-//        val y1:Float,
-//        val x2:Float,
-//        val y2:Float,
-//        val cx:Float,
-//        val cy:Float,
-//        val w:Float,
-//        val h:Float,
-//        val cnf:Float,
-//    )
-//}
 
 
 

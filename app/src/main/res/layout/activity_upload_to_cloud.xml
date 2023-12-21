@@ -6,8 +6,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".UploadToCloudActivity"
-    android:id="@+id/UploadingView">
-<!--    android:background="@color/white">-->
+    android:id="@+id/UploadingView"
+    android:background="@color/white">
 
     <ProgressBar
         android:id="@+id/progressBar"

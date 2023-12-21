@@ -22,9 +22,12 @@ import com.google.firebase.storage.ktx.storageMetadata
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.BufferedReader
+import java.io.BufferedWriter
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileNotFoundException
 import java.io.FileReader
+import java.io.FileWriter
 import java.io.IOException
 
 class UploadToCloudActivity : AppCompatActivity() {
@@ -39,9 +42,143 @@ class UploadToCloudActivity : AppCompatActivity() {
 
     private lateinit var progressBar: ProgressBar
 
-    private lateinit var imageProgress: TextView
+    private lateinit var progressCount: TextView
+
+    private var updateCount = 0
+
+    private fun uploadTxtToCloud(folderTxtPath:String, txtCloudPath:String)
+    {
+        try {
+            // TODO try else with if path exists module for internet
+            println("<----- Uploading txt from: $folderTxtPath to cloud $folderTxtPath------------>")
+            //val uri2 = Uri.fromFile(File(folderTxtPath))
+            val fileInputStream = FileInputStream(File(folderTxtPath))
+            // start
+            // https://firebase.google.com/docs/storage/android/start
+            // storage
+            // https://firebase.google.com/docs/storage/android/upload-files
+            // google cloud setup
+            // https://firebase.google.com/docs/android/setup
+
+            // error in bytes -> https://gorkemkara.medium.com/upload-files-to-android-firebase-stroage-4228fdd8d47f
+
+            val storage = Firebase.storage
+
+            // Create a storage reference from our app
+            val storageRef = storage.reference.child(txtCloudPath)
 
 
+
+
+            // Upload file and metadata to the path 'images/mountains.jpg'
+            if (File(folderTxtPath).exists()) {
+                // Get a reference to the file's contents.
+                // Upload the file to Firebase Storage.
+                storageRef.putBytes(fileInputStream.readBytes()).addOnSuccessListener {
+                    // The file was uploaded successfully.
+                    Toast.makeText(this, "The text file was uploaded successfully.", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+
+//                uploadTask.addOnProgressListener {
+//                    val progress = (100.0 * it.bytesTransferred) / it.totalByteCount
+//                    println("Upload is $progress% done")
+//                }.addOnPausedListener {
+//                    println("Upload is paused")
+//                }.addOnFailureListener {
+//                    // Handle unsuccessful uploads
+//                    println("error: uploading image to goggle cloud")
+//                }.addOnSuccessListener {
+//                    // Handle successful uploads on complete
+//                    // ...
+//                    println("text uploaded to google successfully")
+//                }
+//            } else {
+//                println("error in uploadToCloudActivity : username was null fail to upload images to cloud")
+//            }
+        }
+        catch (e: Exception) {
+            println("error in uploadToCloudActivity/uploadtxtFile() : ")
+            e.printStackTrace()
+        }
+
+    }
+
+    @SuppressLint("SetTextI18n")
+    private  fun getImagePaths()
+    {
+
+        progressBar.progress = 0
+        progressBar.max = 100
+
+        // send images
+        var imagePathname: String
+        var cloudPathname: String
+
+        val gPath: String = Environment.getExternalStorageDirectory().absolutePath
+        val sPath = "DCIM/one_root_images/"
+        val fullPath = gPath + File.separator + sPath
+        println("getting paths from $fullPath")
+        val files = File(fullPath).listFiles()
+
+        val imageDirectoriesList = mutableListOf<String>()
+        if (files != null) {
+            for (file in files) {
+                imageDirectoriesList.add(file.path)
+                //println(file.path)
+            }
+        } else {
+            println("error in uploadingToCloud activity: no image directories in path---> $fullPath")
+        }
+
+        // getting list of directories
+        // https://www.techiedelight.com/list-all-subdirectories-of-a-directory-in-kotlin/
+        // val directories = File(fullPath).listFiles { pathname -> pathname.isDirectory }
+        // println(directories!!.contentToString())
+
+        var sessionNo = 0
+        val noOfSessions = imageDirectoriesList.size
+        for (eachImageDirectory in imageDirectoriesList)
+        {
+            sessionNo+=1
+            uploadingText.text = "session: $sessionNo/${noOfSessions}"
+
+            var imageNo = 0
+
+            val imageFiles = File(eachImageDirectory).listFiles()
+            // val noOfImages = imageFiles?.size
+
+
+            for (file in imageFiles!!) {
+                //TODO do condition for images end with .jpeg or other formats
+                if (file.name.endsWith(".jpg")) {
+                    imageNo +=1
+                    // progressCount.text = "$imageNo/$noOfImages"
+                    imagePathname = file.path
+                    cloudPathname = userName+"_images"+ (file.path.split("one_root_images")[1])
+
+                    // upload single image
+                     uploadImageToCloud(imagePathname,cloudPathname)
+                    allImagePaths.add(imagePathname)
+                    allCloudPaths.add(cloudPathname)
+                    println("----> $imagePathname")
+                    println("how many images updated count: $updateCount")
+                }
+            }
+        }
+
+        // save paths txt in folder
+        val filepath = "ml"
+        val fileName  = "cloudPaths.txt"
+        val txtFolderPath =  this.getExternalFilesDir(filepath)?.absolutePath+"/" +fileName
+        writeTxtFile(txtFolderPath,allCloudPaths)
+        // upload to cloud
+        val txtCloudPath = userName+"_images"+"/$fileName"
+        uploadTxtToCloud(txtFolderPath, txtCloudPath)
+
+
+    }
 
     @SuppressLint("SetTextI18n", "UseCompatLoadingForDrawables")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,17 +186,15 @@ class UploadToCloudActivity : AppCompatActivity() {
         setContentView(R.layout.activity_upload_to_cloud)
         uploadView = findViewById(R.id.UploadingView)
         uploadingText = findViewById(R.id.uploadTextView)
-        progressBar= findViewById(R.id.progressBar)
-        imageProgress= findViewById(R.id.progressCountText)
-
+        progressBar = findViewById(R.id.progressBar)
+        progressCount = findViewById(R.id.progressCountText)
 
 
         readUsernameFromStorage()
-        userName = userName.replace(" ","").replace(".","")
+        userName = userName.replace(" ", "").replace(".", "")
 
         // check internet connection before storing in database
-        if (checkForInternet(this))
-        {
+        if (checkForInternet(this)) {
             Toast.makeText(this, "internet available", Toast.LENGTH_SHORT).show()
             // saving profile data in a firebase database
             println("............................")
@@ -72,7 +207,7 @@ class UploadToCloudActivity : AppCompatActivity() {
         {
             uploadingText.text = "No internet"
             progressBar.visibility = View.GONE
-            imageProgress.visibility = View.GONE
+            progressCount.visibility = View.GONE
             uploadView.background = getDrawable(R.drawable.b2)
             Toast.makeText(this, "internet  not available", Toast.LENGTH_SHORT).show()
             // <------------------ alert box ----------------------------------->
@@ -111,140 +246,134 @@ class UploadToCloudActivity : AppCompatActivity() {
         }
 
     }
-    @SuppressLint("SetTextI18n")
-    private  fun getImagePaths() {
 
-        var imagePathname: String
-        var cloudPathname: String
+    private fun writeTxtFile(filePath: String, fileDataArray: MutableList<String>) {
+        println("writing files to path: $filePath")
+        var fr: FileWriter?= null
+        var br: BufferedWriter?= null
+        try {
+//            val txtLines: MutableList<String> = arrayListOf()
+            val file = File(filePath)
+            // read old paths
+            fileDataArray+= readTxtFile(filePath)
 
-        val gPath: String = Environment.getExternalStorageDirectory().absolutePath
-        val sPath = "DCIM/one_root_images/"
-        val fullPath = gPath + File.separator + sPath
-        println("getting paths from $fullPath")
-        val files = File(fullPath).listFiles()
-
-        val imageDirectoriesList = mutableListOf<String>()
-        if (files != null) {
-            for (file in files) {
-                imageDirectoriesList.add(file.path)
-                //println(file.path)
-            }
-        } else {
-            println("error in uploadingToCloud activity: no image directories in path---> $fullPath")
-        }
-
-        // getting list of directories
-        // https://www.techiedelight.com/list-all-subdirectories-of-a-directory-in-kotlin/
-        // val directories = File(fullPath).listFiles { pathname -> pathname.isDirectory }
-        // println(directories!!.contentToString())
-
-        var sessionNo = 0
-        val noOfSessions = imageDirectoriesList.size
-        for (eachImageDirectory in imageDirectoriesList)
-        {
-            sessionNo+=1
-            uploadingText.text = "session: $sessionNo/${noOfSessions}"
-
-            var imageNo = 0
-
-            val imageFiles = File(eachImageDirectory).listFiles()
-            val noOfImages = imageFiles?.size
-
-            if (noOfImages != null) {
-                progressBar.progress = 0
-                progressBar.max = noOfImages
-            }
-            for (file in imageFiles!!) {
-                imageNo +=1
-                imageProgress.text = "$imageNo/$noOfImages"
-                if (file.name.endsWith(".jpg")) {
-                    imagePathname = file.path
-                    cloudPathname = userName+"_images/"+ (file.path.split("one_root_images")[1])
-
-                    // upload single image
-                    uploadImagesToCloud(imagePathname,cloudPathname)
-
-                    // set progress
-                    progressBar.progress = imageNo
-
-                    allImagePaths.add(imagePathname)
-                    allCloudPaths.add(cloudPathname)
-                    println("----> ${file.path}")
+            if (file.exists())
+            {
+                fr = FileWriter(file)
+                br = BufferedWriter(fr)
+                for (data in  fileDataArray) {
+                    br.write(data+System.getProperty("line.separator"))
                 }
+                println("$filePath file was saved in storage")
             }
+            else
+            {
+                println("error: no file in path: $filePath")
+                fr = FileWriter(file)
+                br = BufferedWriter(fr)
+                br.write("")
+                println("empty file was created")
 
+            }
         }
-        //progressBar.progress = 5
-        progressBar.visibility = View.GONE
-        imageProgress.visibility = View.GONE
-        uploadingText.text = "Upload completed"
-
-
-//        for (i in 0 until allImagePaths.size)
-//        {
-//            uploadImagesToCloud(allImagePaths[],cloudPathname)
-//        }
-
-
-
-        // println("allImagePaths: $allImagePaths")
+        catch (e: IOException)
+        {
+            println("error in UploadToCloud/writeTxtFile() : $filePath cant be written")
+            e.printStackTrace()
+        }
+        finally {
+            try {
+                br?.close()
+                fr?.close()
+            } catch (e: IOException) {
+                e.printStackTrace()
+            }
+        }
 
     }
 
+    private fun readTxtFile(filePath:String): MutableList<String> {
+        try {
+            val txtLines: MutableList<String> = arrayListOf()
+            val file = File(filePath)
+            return if (file.exists()) {
+                val br = BufferedReader(FileReader(file))
+                var st: String
+                while (br.readLine().also { st = it } != null) txtLines.add(st)
+                txtLines // return txt lines
+            }
+            else {
+                arrayListOf()
+            }
+        } catch (e: Exception) {
 
-
-    private fun uploadImagesToCloud(imagePath: String, cloudPath: String)
-    {
-        println("<----- Uploading image to cloud: $imagePath ------------>")
-        val uri2 = Uri.fromFile(File(imagePath))
-        // start
-        // https://firebase.google.com/docs/storage/android/start
-        // storage
-        // https://firebase.google.com/docs/storage/android/upload-files
-        // google cloud setup
-        // https://firebase.google.com/docs/android/setup
-
-        // error in bytes -> https://gorkemkara.medium.com/upload-files-to-android-firebase-stroage-4228fdd8d47f
-        val storage = Firebase.storage
-
-        // Create a storage reference from our app
-        val storageRef = storage.reference
-
-        // File or Blob
-        //val file = Uri.fromFile(File("path/to/mountains.jpg"))
-
-        // Create the file metadata
-        val metadata = storageMetadata {
-            contentType = "image/jpeg"
+            println("error in UploadToCloud/readTxtFile() : $filePath cant be read")
+            e.printStackTrace()
+            return arrayListOf()
         }
+    }
 
+    @SuppressLint("SetTextI18n")
+    private fun uploadImageToCloud(imagePath: String, cloudPath: String)
+    {
+        try {
+            println("<----- Uploading image from: $imagePath to cloud $cloudPath ------------>")
+            val uri2 = Uri.fromFile(File(imagePath))
+            // start
+            // https://firebase.google.com/docs/storage/android/start
+            // storage
+            // https://firebase.google.com/docs/storage/android/upload-files
+            // google cloud setup
+            // https://firebase.google.com/docs/android/setup
 
-        // Upload file and metadata to the path 'images/mountains.jpg'
-        if (userName!="") {
+            // error in bytes -> https://gorkemkara.medium.com/upload-files-to-android-firebase-stroage-4228fdd8d47f
+            val storage = Firebase.storage
 
-            val uploadTask = storageRef.child(cloudPath)
-                .putFile(uri2, metadata)
+            // Create a storage reference from our app
+            val storageRef = storage.reference
 
-            // Listen for state changes, errors, and completion of the upload.
-            // You'll need to import com.google.firebase.storage.component1 and
-            // com.google.firebase.storage.component2
-            uploadTask.addOnProgressListener {
-                val progress = (100.0 * it.bytesTransferred) / it.totalByteCount
-                println("Upload is $progress% done")
-            }.addOnPausedListener {
-                println("Upload is paused")
-            }.addOnFailureListener {
-                // Handle unsuccessful uploads
-                println("error: uploading image to goggle cloud")
-            }.addOnSuccessListener {
-                // Handle successful uploads on complete
-                // ...
-                println("image uploaded to google successfully")
+            // File or Blob
+            //val file = Uri.fromFile(File("path/to/mountains.jpg"))
+
+            // Create the file metadata
+            val metadata = storageMetadata {
+                contentType = "image/jpeg"
+            }
+
+            var progress: Int
+
+            // Upload file and metadata to the path 'images/mountains.jpg'
+            if ((userName != "")and(File(imagePath).exists())) {
+
+                val uploadTask = storageRef.child(cloudPath)
+                    .putFile(uri2, metadata)
+
+                // Listen for state changes, errors, and completion of the upload.
+                // You'll need to import com.google.firebase.storage.component1 and
+                // com.google.firebase.storage.component2
+                uploadTask.addOnProgressListener {
+                    progress = ((100.0 * it.bytesTransferred) / it.totalByteCount).toInt()
+                    progressCount.text = "${progress} %"
+                    println("Upload is $progress% done")
+                    progressBar.progress = progress
+                }.addOnPausedListener {
+                    // Handle paused uploads
+                    println("Upload is paused")
+                }.addOnFailureListener {
+                    // Handle unsuccessful uploads
+                    println("error: uploading image to goggle cloud")
+                }.addOnSuccessListener {
+                    // Handle successful uploads on complete
+                    println("image uploaded to google successfully")
+                    updateCount+=1
+                }
+            } else {
+                println("error in uploadToCloudActivity : username was null or path doesn't exist fail to upload images to cloud")
             }
         }
-        else
-        {
-            println("error in uploadToCloudActivity : username was null fail to upload images to cloud")
+        catch (e: Exception) {
+            println("error in uploadToCloudActivity/uploadImageToCloud() : ")
+            e.printStackTrace()
         }
 
     }
@@ -294,8 +423,8 @@ class UploadToCloudActivity : AppCompatActivity() {
                 //mobileNo = jsonObject.getString("mobileNo")
                 //location = jsonObject.getString("location")
                 //role = jsonObject.getString("role")
-//                println("username from file: $userName")
-//                println("mobile No from file: $mobileNo")
+                //                println("username from file: $userName")
+                //                println("mobile No from file: $mobileNo")
 
             }
             else {
@@ -358,5 +487,59 @@ class UploadToCloudActivity : AppCompatActivity() {
         this.finish()
         startActivity(intent)
     }
-
 }
+
+
+
+
+//fun saveImagePathsInFolder(fileName:String,pathsArrayData: Array<String>)
+//{
+//    val textFilePath = "ml"
+//    // val fileName  = "image_paths.txt"
+//    println("errors raised storing errors in txt file")
+//    val filePath = this.getExternalFilesDir(textFilePath)
+//    val myExternalFile = File(filePath, fileName)
+//
+//    fun isExternalStorageWritable(): Boolean {
+//        val state = Environment.getExternalStorageState()
+//        return Environment.MEDIA_MOUNTED == state
+//    }
+//
+//    try
+//    {
+//        if (isExternalStorageWritable())
+//        {
+//            if (myExternalFile.exists())
+//            {
+//                // read old paths
+//                println("image_paths.txt file exists read line from it and update")
+//                val fileReader = BufferedReader(FileReader(myExternalFile))
+//                val text = fileReader.readText()
+//                fileReader.close()
+//                // add New Path
+//                val newText = "$text\n<--------------------------->\n$errorString\n"
+//                val fileWriter = FileWriter(myExternalFile)
+//                fileWriter.write(newText)
+//                fileWriter.close()
+//            }
+//            else
+//            {
+//                println("errors.txt file does not exist make a new file and update")
+//                val fileWriter = FileWriter(myExternalFile)
+//                fileWriter.write("$errorString\n")
+//                fileWriter.close()
+//            }
+//            // Toast.makeText(this, "errors are stored in text file", Toast.LENGTH_SHORT).show()
+//            println("<---errors.txt file stored successfully ")
+//        }
+//        else
+//        {
+//            Toast.makeText(this, "External storage not available for writing errors.txt", Toast.LENGTH_SHORT).show()
+//            println("External storage not available for storing errors.txt file")
+//        }
+//    }
+//    catch (e: Exception) {
+//        println("error in videoActivity/saveErrorsInTextToStorage() : errors.txt cant be saved")
+//        e.printStackTrace()
+//    }
+//}

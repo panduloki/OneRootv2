@@ -65,7 +65,8 @@ class HomeFragment : Fragment() {
         return view
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?)
+    {
         super.onViewCreated(view, savedInstanceState)
         // reading profile.json from storage
         readProfileFromStorage()
@@ -90,7 +91,9 @@ class HomeFragment : Fragment() {
             val statusString: String = if (activity?.let { it1 -> checkForInternet(it1) } == true) {
                 "user was online"
 
-            } else {
+            }
+            else
+            {
                 "user was offline"
             }
             updateStatusToFirebase(statusString)
@@ -269,11 +272,10 @@ class HomeFragment : Fragment() {
         }
 
         println("sessionStatus: $sessionStatus")
-
         when (sessionStatus) {
             // loading paused
             3 -> {
-                println("user paused loading")
+                updateStatusToFirebase("user paused loading")
                 // disable other buttons
                 loadButtonEvent.isEnabled = false
                 loadButtonEvent.visibility = View.GONE
@@ -293,6 +295,7 @@ class HomeFragment : Fragment() {
             // unloading paused
             4 -> {
                 println("user paused unloading")
+                updateStatusToFirebase( "user paused unloading session")
                 // disable other buttons
                 loadButtonEvent.isEnabled = false
                 loadButtonEvent.visibility = View.GONE
@@ -371,10 +374,10 @@ class HomeFragment : Fragment() {
         }
     }
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-//        updateStatusToFirebase("user closed the home fragment ")
-    }
+//    override fun onDestroyView() {
+//        super.onDestroyView()
+////        updateStatusToFirebase("user closed the home fragment ")
+//    }
 
     private fun replaceFragment(fragment : Fragment){
 

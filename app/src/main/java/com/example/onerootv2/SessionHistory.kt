@@ -241,7 +241,7 @@ class SessionHistory : AppCompatActivity()
             imagePath += sessionNo2
             bundle.putString("path", imagePath)
 
-            println("SessionHistory.kt/ getting images from $imagePath ")
+            println("SessionHistory.kt/dispatchGalleryIntent()/ getting images from $imagePath ")
             val i = Intent(this, GalleryActivity::class.java)
             i.putExtras(bundle)
             startActivity(i)

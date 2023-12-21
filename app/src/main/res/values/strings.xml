@@ -54,7 +54,7 @@
     <string name="uninstallText">App Down !!!!! \nPlease uninstall \nthis app</string>
 
     <string-array name="location_list">
-        <item>Chamrajnagar</item>
+        <item>Chamraja nagar</item>
         <item>Maddur</item>
         <item>Pollachi</item>
         <item>Other</item>
