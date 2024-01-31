@@ -103,7 +103,7 @@ var saveBestPic = false
 var bestPicSelected = false
 
 var best_count = 0
-var useMlInFolder = false
+var useMlInFolder = true
 // for playing sound
 private var mMediaPlayer: MediaPlayer? = null
 
@@ -1082,14 +1082,14 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
     private fun manualDetection(mutable5:Bitmap): Bitmap {
         try {
             val tfliteFilePath = "ml"
-            val tfliteFileName = "coconut400.tflite"
-            val tflitePath = File(this.getExternalFilesDir(tfliteFilePath), tfliteFileName)
+            val tfliteFileName = "coconut1045.tflite"
+            val tfliteFile = File(this.getExternalFilesDir(tfliteFilePath), tfliteFileName)
 
             // check tflite path exists or not
-            if ((tflitePath.exists()) and (useMlInFolder))
+            if ((tfliteFile.exists()) and (useMlInFolder))
             {
-                println("tflite model exists in path: $tflitePath to detect coconut images")
-                return detectionUsingTfliteInFolder(mutable5)
+                println("******** tflite model exists in path: ${tfliteFile.absolutePath} to detect coconut images *****")
+                return  detectionUsingTfliteInFolder(mutable5, tfliteFile)
             }
             else
             {
@@ -1098,7 +1098,7 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
                 val presentConfidenceList:MutableList<Float> = arrayListOf()
                 val presentConfidenceColorList:MutableList<Boolean> = arrayListOf()
 
-                println("The file in path: $tflitePath does not exist. using default coconut400.tflite")
+                println("******** The file in path: $tfliteFile does not exist. using default coconut400.tflite *****")
                 // auto mode detection rectangle
                 fun drawManualDetectionRectangles(mutable6: Bitmap, locationsList:FloatArray, scoresList:FloatArray): Bitmap {
                     val h = mutable6.height
@@ -1837,7 +1837,7 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
     {
         val filepath = "OneRootFiles"
         val fileName  = "detections.json"
-        println("video activity()/ writing  detection.json from storage")
+        println("video activity()/ writing  detection.json to storage")
 
         fun isExternalStorageWritable(): Boolean {
             val state = Environment.getExternalStorageState()
@@ -1857,7 +1857,6 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
                 e.printStackTrace()
             }
         }
-
 
         val dict2 = readDetectionClassFromFolder()
 
@@ -2119,7 +2118,8 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
     }
     // TODO download new tflite model when released
     // TODO send images to cloud with text files of all image paths which was easy to download later
-    private fun detectionUsingTfliteInFolder(bitmap: Bitmap): Bitmap {
+    private fun detectionUsingTfliteInFolder(bitmap: Bitmap, mlFile: File): Bitmap {
+
         fun drawDetectionResult(inputBitmap: Bitmap, detectionResults: List<Detection>): Bitmap {
             val outputBitmap = inputBitmap.copy(Bitmap.Config.ARGB_8888, true)
             // <----------------------- drawing  detections --------------------------------------->
@@ -2156,18 +2156,20 @@ class VideoActivity : AppCompatActivity(), View.OnClickListener {
         // Step 2: Initialize the detector object
         val options = ObjectDetector.ObjectDetectorOptions.builder()
             .setMaxResults(50)
-            .setScoreThreshold(0.5f)
+            .setScoreThreshold(0.4f)
             .build()
+        println("******** detecting image with custom path: ${mlFile.path} in user mobile")
         // tflite model
-        val detector = ObjectDetector.createFromFileAndOptions(
-            this,
-            "coconut400.tflite",
-            options
-        )
+//        val detector = ObjectDetector.createFromFileAndOptions(
+//            this,
+//            mlFile.path.toString(),
+//            options
+//        )
+        val detector = ObjectDetector.createFromFileAndOptions(mlFile,options)
 
         // Step 3: Feed given image to the detector
         val results:MutableList<Detection> = detector.detect(image)
-        println("********** results: $results")
+        println("********** results from custom ml detections: $results")
         
         return drawDetectionResult(bitmap,results)
 

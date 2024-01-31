@@ -87,6 +87,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
           if (autoSignInDone or signedIn)
           {
               replaceFragment(HomeFragment())
+              // TODO try to put navigation bar at front4
               binding.bottomNavigationView.setOnItemSelectedListener {
                   when(it.itemId)
                   {

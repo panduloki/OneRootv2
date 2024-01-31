@@ -68,8 +68,6 @@ class UploadToCloudActivity : AppCompatActivity() {
             val storageRef = storage.reference.child(txtCloudPath)
 
 
-
-
             // Upload file and metadata to the path 'images/mountains.jpg'
             if (File(folderTxtPath).exists()) {
                 // Get a reference to the file's contents.
@@ -99,28 +97,21 @@ class UploadToCloudActivity : AppCompatActivity() {
 //            }
         }
         catch (e: Exception) {
-            println("error in uploadToCloudActivity/uploadtxtFile() : ")
+            println("error in uploadToCloudActivity/uploadTxtToCloud() : ")
             e.printStackTrace()
         }
-
     }
 
     @SuppressLint("SetTextI18n")
-    private  fun getImagePaths()
+    private  fun getImagePaths(folderPath:String)
     {
-
-        progressBar.progress = 0
-        progressBar.max = 100
 
         // send images
         var imagePathname: String
         var cloudPathname: String
 
-        val gPath: String = Environment.getExternalStorageDirectory().absolutePath
-        val sPath = "DCIM/one_root_images/"
-        val fullPath = gPath + File.separator + sPath
-        println("getting paths from $fullPath")
-        val files = File(fullPath).listFiles()
+        println("getting paths from $folderPath")
+        val files = File(folderPath).listFiles()
 
         val imageDirectoriesList = mutableListOf<String>()
         if (files != null) {
@@ -128,8 +119,10 @@ class UploadToCloudActivity : AppCompatActivity() {
                 imageDirectoriesList.add(file.path)
                 //println(file.path)
             }
-        } else {
-            println("error in uploadingToCloud activity: no image directories in path---> $fullPath")
+        }
+        else
+        {
+            println("error in uploadingToCloud activity: no image directories in path---> $folderPath")
         }
 
         // getting list of directories
@@ -137,46 +130,40 @@ class UploadToCloudActivity : AppCompatActivity() {
         // val directories = File(fullPath).listFiles { pathname -> pathname.isDirectory }
         // println(directories!!.contentToString())
 
-        var sessionNo = 0
-        val noOfSessions = imageDirectoriesList.size
+        val noOfDirectories = imageDirectoriesList.size
+        var noOfImages = 0
         for (eachImageDirectory in imageDirectoriesList)
         {
-            sessionNo+=1
-            uploadingText.text = "session: $sessionNo/${noOfSessions}"
-
-            var imageNo = 0
-
             val imageFiles = File(eachImageDirectory).listFiles()
-            // val noOfImages = imageFiles?.size
-
 
             for (file in imageFiles!!) {
                 //TODO do condition for images end with .jpeg or other formats
                 if (file.name.endsWith(".jpg")) {
-                    imageNo +=1
+                    noOfImages +=1
                     // progressCount.text = "$imageNo/$noOfImages"
                     imagePathname = file.path
-                    cloudPathname = userName+"_images"+ (file.path.split("one_root_images")[1])
+                    cloudPathname = userName+"_images"+ (file.path.split("one_root_original_images")[1])
 
                     // upload single image
-                     uploadImageToCloud(imagePathname,cloudPathname)
+                    // uploadImageToCloud(imagePathname,cloudPathname)
                     allImagePaths.add(imagePathname)
                     allCloudPaths.add(cloudPathname)
-                    println("----> $imagePathname")
-                    println("how many images updated count: $updateCount")
+                    println("collected image path name: $imagePathname, collected cloud path name: $cloudPathname")
                 }
             }
         }
-
+        println("......")
+        println("<--------------------- from Folder: $folderPath collected No:$noOfImages images from $noOfDirectories directories-------------------->")
         // save paths txt in folder
         val filepath = "ml"
         val fileName  = "cloudPaths.txt"
         val txtFolderPath =  this.getExternalFilesDir(filepath)?.absolutePath+"/" +fileName
         writeTxtFile(txtFolderPath,allCloudPaths)
+        println("all image path names are stored as $fileName in folder path: $txtFolderPath in user mobile")
         // upload to cloud
         val txtCloudPath = userName+"_images"+"/$fileName"
         uploadTxtToCloud(txtFolderPath, txtCloudPath)
-
+        println("all cloud images are uploaded to firebase storage in $txtCloudPath")
 
     }
 
@@ -190,6 +177,7 @@ class UploadToCloudActivity : AppCompatActivity() {
         progressCount = findViewById(R.id.progressCountText)
 
 
+
         readUsernameFromStorage()
         userName = userName.replace(" ", "").replace(".", "")
 
@@ -197,9 +185,27 @@ class UploadToCloudActivity : AppCompatActivity() {
         if (checkForInternet(this)) {
             Toast.makeText(this, "internet available", Toast.LENGTH_SHORT).show()
             // saving profile data in a firebase database
-            println("............................")
-            getImagePaths()
-            println("............................")
+            println("........uploading images started ..........")
+            val gPath: String = Environment.getExternalStorageDirectory().absolutePath
+            val sPath = "DCIM/one_root_original_images/"
+            val fullPath = gPath + File.separator + sPath
+            getImagePaths(fullPath)
+
+            progressBar.progress = 0
+            progressBar.max = allImagePaths.size
+
+            if (allImagePaths.size>=1){
+                for (id3 in allImagePaths.indices)
+                {
+                    progressBar.progress = id3
+                    // uploadingText.text = "no of images updated $updateCount / ${allImagePaths.size} "
+                    println("uploading images to cloud with cloud path name: ${allCloudPaths[id3]}")
+                    uploadImageToCloud(allImagePaths[id3],allCloudPaths[id3])
+                }
+
+            }
+
+            println("............uploading completed...........")
             println(" ")
 
         }
@@ -227,7 +233,20 @@ class UploadToCloudActivity : AppCompatActivity() {
                 //startWifiIntent()
                 //wifi.isWifiEnabled = true
                 // save profile data when wifi enabled
-                getImagePaths()
+                val gPath: String = Environment.getExternalStorageDirectory().absolutePath
+                val sPath = "DCIM/one_root_images/"
+                val fullPath = gPath + File.separator + sPath
+                getImagePaths(fullPath)
+
+                // save paths txt in folder
+                val filepath = "ml"
+                val fileName  = "cloudPaths.txt"
+                val txtFolderPath =  this.getExternalFilesDir(filepath)?.absolutePath+"/" +fileName
+                writeTxtFile(txtFolderPath,allCloudPaths)
+                // upload to cloud
+                val txtCloudPath = userName+"_images"+"/$fileName"
+                uploadTxtToCloud(txtFolderPath, txtCloudPath)
+
             }
             builder.setNegativeButton("cancel") { _, _ ->
                 //wifi.isWifiEnabled = false
@@ -366,6 +385,7 @@ class UploadToCloudActivity : AppCompatActivity() {
                     // Handle successful uploads on complete
                     println("image uploaded to google successfully")
                     updateCount+=1
+                    uploadingText.text = "update count:$updateCount/ ${allImagePaths.size}"
                 }
             } else {
                 println("error in uploadToCloudActivity : username was null or path doesn't exist fail to upload images to cloud")
@@ -475,7 +495,6 @@ class UploadToCloudActivity : AppCompatActivity() {
             else -> false
         }
     }
-
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         dispatchTakeHomeIntent()
@@ -488,6 +507,7 @@ class UploadToCloudActivity : AppCompatActivity() {
         startActivity(intent)
     }
 }
+
 
 
 

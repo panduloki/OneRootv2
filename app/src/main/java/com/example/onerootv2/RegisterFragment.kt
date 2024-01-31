@@ -57,9 +57,11 @@ class RegisterFragment : Fragment() {
         //<---------------------------- location auto complete ---------------------------->
         // https://www.geeksforgeeks.org/exposed-drop-down-menu-in-android/
         //https://www.youtube.com/watch?v=741l_fPKL3Y&t=518s
+
         // get reference to the string array that we just created
         val locationArray = resources.getStringArray(R.array.location_list)
         // create an array adapter and pass the required parameter
+
         // in our case pass the context, drop down layout , and array.
         val arrayAdapter = activity?.let { ArrayAdapter(it, R.layout.dropdown_item, locationArray) }
         // get reference to the autocomplete text view
